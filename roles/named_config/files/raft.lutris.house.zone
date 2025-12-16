@@ -1,0 +1,24 @@
+$TTL 5m
+$ORIGIN raft.lutris.house.
+
+@                             IN SOA ns1.raft.lutris.house. hostmaster.lutris.house. (
+                                                  1 ; serial number
+                                                  15m ; refresh
+                                                  1m ; retry
+                                                  24h ; expiry
+                                                  1m ; nxdomain ttl
+                                                )
+
+                              IN NS ns1
+                              IN NS ns2
+                              IN NS ns3
+
+ns1                           IN A 172.16.61.10
+ns2                           IN A 172.16.61.20
+ns3                           IN A 172.16.61.30
+
+k8s-api                       IN A 172.16.61.11
+
+alcyone                       IN A 172.16.61.10
+electra                       IN A 172.16.61.20
+merope                        IN A 172.16.61.30

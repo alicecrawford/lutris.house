@@ -1,0 +1,10 @@
+---
+- hosts: dns_servers
+  become: true
+  roles:
+    - set_hostname
+    - disable_firewall
+    - named_config
+    - keepalived_install
+    - keepalived_dns
+    - dnsdist_config

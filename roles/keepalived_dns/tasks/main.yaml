@@ -1,0 +1,15 @@
+---
+- name: keepalived dns confg files
+  vars:
+    k_mode: "{{ 'MASTER' if 'dns_primary' in group_names else 'SECONDARY' }}"
+  ansible.builtin.template:
+    src: keepalive_dns.conf.j2
+    dest: /etc/keepalived/conf.d/keepalive_dns.conf
+    owner: root
+    group: root
+    mode: 0644
+- name: restart keepalived
+  ansible.builtin.systemd_service:
+    name: keepalived
+    enabled: true
+    state: restarted

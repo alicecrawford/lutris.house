@@ -1,0 +1,19 @@
+---
+dns_servers:
+  hosts:
+    alcyone.raft.lutris.house:
+    electra.raft.lutris.house:
+    merope.raft.lutris.house:
+dns_primary:
+  hosts:
+    alcyone.raft.lutris.house:
+k8s_nodes:
+  hosts:
+    alcyone.raft.lutris.house:
+    electra.raft.lutris.house:
+    merope.raft.lutris.house:
+k8s_control_nodes:
+  hosts:
+    alcyone.raft.lutris.house:
+    electra.raft.lutris.house:
+    merope.raft.lutris.house:

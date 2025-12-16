@@ -1,0 +1,77 @@
+acl internal {
+  10.0.0.0/8;
+  172.16.0.0/12;
+  196.168.0.0/16;
+  fd00::/8;
+  2001:5a8:4bd5:ef00::/64;
+};
+
+options {
+  version "not currently available";
+  allow-query { any; };
+  allow-recursion { internal; };
+
+  listen-on port 53 { {{ ansible_facts['default_ipv4']['address'] }}; };
+  listen-on-v6 port 53 { ::1; };
+  directory       "/var/named";
+  dump-file       "/var/named/data/cache_dump.db";
+  statistics-file "/var/named/data/named_stats.txt";
+  memstatistics-file "/var/named/data/named_mem_stats.txt";
+  secroots-file   "/var/named/data/named.secroots";
+  recursing-file  "/var/named/data/named.recursing";
+
+  managed-keys-directory "/var/named/dynamic";
+  geoip-directory "/usr/share/GeoIP";
+
+  pid-file "/run/named/named.pid";
+  session-keyfile "/run/named/session.key";
+
+  recursion yes;
+
+  forwarders {
+    1.1.1.1;
+    8.8.8.8;
+  };
+  forward only;
+
+  /* https://fedoraproject.org/wiki/Changes/CryptoPolicy */
+  include "/etc/crypto-policies/back-ends/bind.config";
+
+};
+
+include "/var/named/zone_update.key";
+
+logging {
+        channel default_debug {
+                file "data/named.run";
+                severity dynamic;
+        };
+};
+
+zone "raft.lutris.house." {
+  type primary;
+
+  file "raft.lutris.house.zone";
+  
+  notify yes;
+
+  allow-transfer {
+    172.16.0.0/18;
+  };
+
+  allow-update {
+    key "zone_update.key";
+  };
+
+  serial-update-method increment;
+
+  // allow-update-forwarding { any; };
+};
+
+zone "." IN {
+        type hint;
+        file "/etc/named.ca";
+};
+
+include "/etc/named.rfc1912.zones";
+include "/etc/named.root.key";

@@ -1,0 +1,17 @@
+---
+- name: Install dnsdist
+  ansible.builtin.dnf5:
+    name: dnsdist
+    state: latest
+- name: Copy config file
+  ansible.builtin.copy:
+    src: dnsdist.conf
+    dest: /etc/dnsdist/dnsdist.conf
+    owner: root
+    group: dnsdist
+    mode: 0640
+- name: Start dnsdist service
+  ansible.builtin.systemd_service:
+    name: dnsdist
+    enabled: true
+    state: started

@@ -1,0 +1,12 @@
+---
+extra_packages:
+  - '@Development tools'
+  - git
+  - k9s
+  - vim
+  - mc
+  - nvim
+  - ipython
+  - zsh
+  - tmux
+  - nmtui

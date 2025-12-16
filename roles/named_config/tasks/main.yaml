@@ -1,0 +1,73 @@
+---
+- name: Install bind dns server
+  ansible.builtin.dnf5:
+    name: bind-chroot
+    state: latest
+- name: Get that ip address
+  debug:
+    msg: "{{ ansible_facts['default_ipv4']['address'] }}"
+- name: Copy primary dns configuration file
+  ansible.builtin.template:
+    src: named-primary.conf.j2
+    dest: /var/named/chroot/etc/named/named.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: "'dns_primary' in group_names"
+- name: Copy zone file
+  ansible.builtin.copy:
+    src: raft.lutris.house.zone
+    dest: /var/named/chroot/var/named/raft.lutris.house.zone
+    owner: named
+    group: named
+    mode: 0644
+  when: "'dns_primary' in group_names"
+- name: Create update key
+  vars:
+    key_file: /var/named/chroot/var/named/zone_update.key
+  ansible.builtin.shell:
+    cmd: "tsig-keygen -a hmac-sha256 zone_update.key > {{ key_file }}"
+    creates: "{{ key_file }}"
+  when: "'dns_primary' in group_names"
+- name: Copy secondary dns configuration file
+  ansible.builtin.template:
+    src: named-secondary.conf.j2
+    dest: /var/named/chroot/etc/named/named.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: "'dns_primary' not in group_names"
+- name: Make missing directories
+  vars:
+    directories:
+      - /var/named/chroot/var/named
+      - /var/named/chroot/var/named/dynamic
+      - /var/named/chroot/var/named/data
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: named
+    group: named
+    mode: 0755
+  loop: "{{ directories }}"
+- name: Link files into chroot
+  vars:
+    link_files:
+      - /etc/named.rfc1912.zones
+      - /etc/named.root.key
+      - /etc/named.ca
+      - /usr/share/GeoIP/GeoLite2-City.mmdb
+      - /usr/share/GeoIP/GeoLite2-Country.mmdb
+  ansible.builtin.file:
+    src: "{{ item }}"
+    dest: "/var/named/chroot{{ item }}"
+    state: hard
+    owner: root
+    group: root
+    mode: 0644
+  loop: "{{ link_files }}"
+- name: Start named service
+  ansible.builtin.systemd_service:
+    name: named-chroot
+    enabled: true
+    state: started

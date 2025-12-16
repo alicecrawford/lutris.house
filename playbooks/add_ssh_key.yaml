@@ -1,0 +1,6 @@
+---
+- hosts: all
+  vars:
+    ansible_host_key_checking: false
+  roles:
+    - ssh_auth_keys

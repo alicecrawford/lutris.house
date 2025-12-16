@@ -1,0 +1,29 @@
+---
+- name: Install keepalived
+  ansible.builtin.dnf5:
+    name: keepalived
+    state: latest
+- name: Make keepalived.d dir
+  ansible.builtin.file:
+    path: /etc/keepalived/conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+- name: Copy keepalived main config
+  ansible.builtin.copy:
+    src: keepalived.conf
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: 0644
+- name: Sysctls for keepalived
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: '1'
+    state: present
+    sysctl_set: true
+    reload: true
+  loop:
+    - net.ipv4.ip_nonlocal_bind
+    - net.ipv6.ip_nonlocal_bind
