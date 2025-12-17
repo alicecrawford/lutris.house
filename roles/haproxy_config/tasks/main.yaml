@@ -1,0 +1,17 @@
+---
+- name: install haproxy
+  ansible.builtin.dnf5:
+    name: haproxy
+    state: latest
+- name: copy config file
+  ansible.builtin.copy:
+    src: haproxy.cfg
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: 0644
+- name: start haproxy service
+  ansible.builtin.systemd_service:
+    name: haproxy
+    enabled: true
+    state: started

@@ -1,12 +1,11 @@
 ---
 extra_packages:
-  - '@Development tools'
   - git
   - k9s
   - vim
   - mc
-  - nvim
+  - neovim
   - ipython
   - zsh
   - tmux
-  - nmtui
+  - NetworkManager-tui

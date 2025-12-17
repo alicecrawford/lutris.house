@@ -2,7 +2,7 @@ vrrp_instance VI_DNS {
     state {{ k_mode }}
   interface enp1s0
     virtual_router_id 53
-    priority 100
+    priority {{ k_priority }}
 
     virtual_ipaddress {
         172.16.61.253/18

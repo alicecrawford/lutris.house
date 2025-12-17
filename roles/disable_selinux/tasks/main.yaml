@@ -1,0 +1,7 @@
+---
+- name: Disable selinux
+  ansible.posix.selinux:
+    state: disabled
+    update_kernel_param: true
+  notify:
+    - Reboot system

@@ -1,0 +1,23 @@
+---
+k8s_packages:
+  - iptables
+  - iproute-tc
+  - "kubernetes{{ k8s_version }}"
+  - "kubernetes{{ k8s_version }}-kubeadm"
+  - "kubernetes{{ k8s_version }}-client"
+  - "cri-o{{ k8s_version }}"
+  - containernetworking-plugins
+  - containerd
+k8s_modules:
+  - overlay
+  - br_netfilter
+  - ip6table_filter
+  - ip6_tables
+  - ip6table_mangle
+  - ip6table_raw
+k8s_sysctl:
+  - net.bridge.bridge-nf-call-iptables
+  - net.bridge.bridge-nf-call-ip6tables
+  - net.bridge.bridge-nf-call-arptables
+  - net.ipv4.ip_forward
+  - net.ipv6.conf.all.forwarding
