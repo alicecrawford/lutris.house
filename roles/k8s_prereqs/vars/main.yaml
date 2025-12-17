@@ -8,6 +8,8 @@ k8s_packages:
   - "cri-o{{ k8s_version }}"
   - containernetworking-plugins
   - containerd
+  - python3-kubernetes
+  - helm
 k8s_modules:
   - overlay
   - br_netfilter

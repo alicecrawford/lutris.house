@@ -1,8 +1,8 @@
 ---
 - name: keepalived k8s api config files
   vars:
-    k_mode: "{{ 'MASTER' if k8s_primary_vip is defined else 'SECONDARY' }}"
-    k_priority: "{{ '100' if k8s_primary_vip is defined else '90' }}"
+    k_mode: "{{ 'MASTER' if 'k8s_init_node' in group_names else 'SECONDARY' }}"
+    k_priority: "{{ '100' if 'k8s_init_node' in group_names else '90' }}"
     k_pass: "{{ lookup('community.general.random_string', length=12, special=false) }}"
   ansible.builtin.template:
     src: keepalive_k8s_api.conf.j2

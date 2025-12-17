@@ -16,3 +16,4 @@
     - keepalived_k8s_api
     - haproxy_config
     - k8s_prereqs
+    - k8s_init

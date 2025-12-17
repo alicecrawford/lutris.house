@@ -12,6 +12,9 @@ k8s_nodes:
     alcyone.raft.lutris.house:
     electra.raft.lutris.house:
     merope.raft.lutris.house:
+k8s_init_node:
+  hosts:
+    alcyone.raft.lutris.house:
 k8s_control_nodes:
   hosts:
     alcyone.raft.lutris.house:

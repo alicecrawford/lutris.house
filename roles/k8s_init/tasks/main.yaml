@@ -1,0 +1,78 @@
+---
+- name: get cluster info
+  kubernetes.core.k8s_cluster_info:
+    kubeconfig: /etc/kubernetes/admin.conf
+  register: api_status
+  ignore_errors: true
+
+- name: pull images
+  ansible.builtin.shell:
+    cmd: kubeadm config images pull
+  when: api_status['failed'] == true
+
+- name: init cluster
+  ansible.builtin.shell:
+    cmd: >
+      kubeadm init --upload-certs --apiserver-bind-port=6442
+      "--control-plane-endpoint={{ k8s_api_name }}:6443"
+      "--pod-network-cidr={{ k8s_pod_cidr }}"
+      "--service-cidr={{ k8s_svc_cidr }}"
+      "--service-dns-domain={{ k8s_svc_dns }}"
+  when: api_status['failed'] == true and 'k8s_init_node' in group_names
+
+- name: get cluster key
+  ansible.builtin.shell: >
+    kubeadm init phase upload-certs --upload-certs |
+    tail -n 1 | tr -d '[:space:]'
+  register: cluster_key
+  when: "'k8s_init_node' in group_names"
+  run_once: true
+  changed_when: false
+
+- name: get join command
+  ansible.builtin.shell: >
+    kubeadm token create --print-join-command
+  register: cluster_join
+  when: "'k8s_init_node' in group_names"
+  run_once: true
+  changed_when: false
+
+- name: join other control plane nodes
+  ansible.builtin.shell: >
+    {{ cluster_join.stdout }}
+    --apiserver-bind-port 6442 --control-plane --certificate-key
+    {{ cluster_key.stdout }}
+  when: "'k8s_control_nodes' is in group_names and 'k8s_init_node' not in group_names and api_status['failed'] == true"
+
+- name: Add cilium repository
+  kubernetes.core.helm_repository:
+    name: cilium
+    repo_url: https://helm.cilium.io/
+    kubeconfig: /etc/kubernetes/admin.conf
+  run_once: true
+
+- name: install cilium
+  kubernetes.core.helm:
+    name: cilium
+    chart_ref: cilium/cilium
+    kubeconfig: /etc/kubernetes/admin.conf
+    namespace: kube-system
+    set_values:
+      - value: "cni.exclusive=false"
+      - value: "ipv4.enabled=true"
+      - value: "ipv6.enabled=true"
+      - value: "ipam.mode=cluster-pool"
+      - value: "ipam.operator.clusterPoolIPv4PodCIDRList={{ k8s_pod_cidr_ipv4 }}"
+      - value: "ipam.operator.clusterPoolIPv4MaskSize=24"
+      - value: "ipam.operator.clusterPoolIPv6PodCIDRList={{ k8s_pod_cidr_ipv6 }}"
+      - value: "ipam.operator.clusterPoolIPv6MaskSize=64"
+  run_once: true
+
+- name: Remove control plane node taint
+  kubernetes.core.k8s_taint:
+    name: "{{ inventory_hostname }}"
+    kubeconfig: /etc/kubernetes/admin.conf
+    taints:
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule
+    state: absent
