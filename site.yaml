@@ -17,3 +17,10 @@
     - haproxy_config
     - k8s_prereqs
     - k8s_init
+    - cilium_install
+    - metrics-server_install
+    - istio_install
+    - longhorn_install
+    - metallb_install
+    - cert-manager_install
+    - external-dns_install
