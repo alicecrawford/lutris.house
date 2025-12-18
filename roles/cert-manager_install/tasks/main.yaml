@@ -1,0 +1,60 @@
+---
+- name: install cert-manager
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition: "{{ lookup('file', 'cert-manager.yaml') | from_yaml_all }}"
+    server_side_apply:
+      field_manager: ansible
+  run_once: true
+
+- name: get secret presence
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/kubernetes/admin.conf
+    kind: Secret
+    namespace: cert-manager
+    name: tsig-secret
+  register: secret_presence
+  run_once: true
+
+- name: get dns key
+  ansible.builtin.shell:
+    cmd: grep secret /var/named/zone_update.key | sed -e 's/.*"\(.*\)".*/\1/'
+  register: dns_key
+  when: "'dns_primary' in group_names and not secret_presence['resources']"
+  run_once: true
+
+- name: add dns key secret
+  ansible.builtin.shell:
+    cmd: "kubectl -n cert-manager create secret generic tsig-secret --from-literal=tsig-secret-key={{ dns_key.stdout }}"
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  when: "not secret_presence['resources']"
+  run_once: true
+
+- name: add letsencrypt setup for dns server
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+      metadata:
+        name: letsencrypt-dns01-issuer
+        namespace: cert-manager
+      spec:
+        acme:
+          server: https://acme-v02.api.letsencrypt.org/directory
+          email: alice@tuxnami.org
+          privateKeySecretRef:
+            name: letsencrypt-dns01-api-key
+          solvers:
+            - dns01:
+                rfc2136:
+                  nameserver: 172.16.61.10:53
+                  tsigKeyName: zone_update.key
+                  tsigAlgorithm: HMACSHA256
+                  tsigSecretSecretRef:
+                    name: tsig-secret
+                    key: tsig-secret-key
+  run_once: true
