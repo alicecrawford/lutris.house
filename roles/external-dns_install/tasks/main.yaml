@@ -1,0 +1,33 @@
+---
+- name: install external-dns
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition: "{{ lookup('file', 'external-dns.yaml') | from_yaml_all }}"
+    server_side_apply:
+      field_manager: ansible
+  run_once: true
+
+- name: get secret presence
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/kubernetes/admin.conf
+    kind: Secret
+    namespace: external-dns
+    name: external-dns
+  register: secret_presence
+  run_once: true
+
+- name: get dns key
+  ansible.builtin.shell:
+    cmd: grep secret /var/named/zone_update.key | sed -e 's/.*"\(.*\)".*/\1/'
+  register: dns_key
+  when: "'dns_primary' in group_names and not secret_presence['resources']"
+  run_once: true
+
+- name: add dns key secret
+  ansible.builtin.shell:
+    cmd: "kubectl -n external-dns create secret generic external-dns --from-literal=secret={{ dns_key.stdout }}"
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  when: "not secret_presence['resources']"
+  run_once: true
