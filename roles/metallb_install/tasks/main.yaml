@@ -1,0 +1,30 @@
+---
+- name: Add metallb repository
+  kubernetes.core.helm_repository:
+    name: metallb
+    repo_url: https://metallb.github.io/metallb
+    kubeconfig: /etc/kubernetes/admin.conf
+  run_once: true
+
+- name: create metallb namespace
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: metallb-system
+        labels:
+          pod-security.kubernetes.io/enforce: privileged
+          pod-security.kubernetes.io/audit: privileged
+          pod-security.kubernetes.io/warn: privileged
+  run_once: true
+
+- name: install metallb
+  kubernetes.core.helm:
+    name: metallb
+    chart_ref: metallb/metallb
+    kubeconfig: /etc/kubernetes/admin.conf
+    namespace: metallb-system
+  run_once: true
