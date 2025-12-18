@@ -44,30 +44,6 @@
     {{ cluster_key.stdout }}
   when: "'k8s_control_nodes' is in group_names and 'k8s_init_node' not in group_names and api_status['failed'] == true"
 
-- name: Add cilium repository
-  kubernetes.core.helm_repository:
-    name: cilium
-    repo_url: https://helm.cilium.io/
-    kubeconfig: /etc/kubernetes/admin.conf
-  run_once: true
-
-- name: install cilium
-  kubernetes.core.helm:
-    name: cilium
-    chart_ref: cilium/cilium
-    kubeconfig: /etc/kubernetes/admin.conf
-    namespace: kube-system
-    set_values:
-      - value: "cni.exclusive=false"
-      - value: "ipv4.enabled=true"
-      - value: "ipv6.enabled=true"
-      - value: "ipam.mode=cluster-pool"
-      - value: "ipam.operator.clusterPoolIPv4PodCIDRList={{ k8s_pod_cidr_ipv4 }}"
-      - value: "ipam.operator.clusterPoolIPv4MaskSize=24"
-      - value: "ipam.operator.clusterPoolIPv6PodCIDRList={{ k8s_pod_cidr_ipv6 }}"
-      - value: "ipam.operator.clusterPoolIPv6MaskSize=64"
-  run_once: true
-
 - name: Remove control plane node taint
   kubernetes.core.k8s_taint:
     name: "{{ inventory_hostname }}"
@@ -76,3 +52,18 @@
       - key: node-role.kubernetes.io/control-plane
         effect: NoSchedule
     state: absent
+
+- name: Fix etcd metric endpoint
+  ansible.builtin.replace:
+    path: /etc/kubernetes/manifests/etcd.yaml
+    regexp: '(--listen-metrics-urls)=http.*:(.*)$'
+    replace: '\1=http://0.0.0.0:\2'
+
+- name: Fix controller-manager and scheduler metric endpoints
+  ansible.builtin.replace:
+    path: "/etc/kubernetes/manifests/{{ item }}"
+    regexp: '(--bind-address)=.*$'
+    replace: '\1=0.0.0.0'
+  loop:
+    - kube-controller-manager.yaml
+    - kube-scheduler.yaml
