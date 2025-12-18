@@ -1,0 +1,28 @@
+---
+- name: Add metrics-server repository
+  kubernetes.core.helm_repository:
+    name: metrics-server
+    repo_url: https://kubernetes-sigs.github.io/metrics-server/
+    kubeconfig: /etc/kubernetes/admin.conf
+  run_once: true
+
+- name: get deployment info
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/kubernetes/admin.conf
+    kind: Deployment
+    namespace: kube-system
+    name: metrics-server
+  register: dep_status
+  run_once: true
+
+- name: install metrics-server
+  kubernetes.core.helm:
+    name: metrics-server
+    chart_ref: metrics-server/metrics-server
+    kubeconfig: /etc/kubernetes/admin.conf
+    namespace: kube-system
+    set_values:
+      - value: "args='{--kubelet-insecure-tls}'"
+      - value: "replicas=2"
+  run_once: true
+  when: "not dep_status['resources']"
