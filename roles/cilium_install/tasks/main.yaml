@@ -1,0 +1,31 @@
+---
+- name: Add cilium repository
+  kubernetes.core.helm_repository:
+    name: cilium
+    repo_url: https://helm.cilium.io/
+    kubeconfig: /etc/kubernetes/admin.conf
+  run_once: true
+
+- name: get cluster info
+  kubernetes.core.k8s_cluster_info:
+    kubeconfig: /etc/kubernetes/admin.conf
+  register: api_status
+  run_once: true
+
+- name: install cilium
+  kubernetes.core.helm:
+    name: cilium
+    chart_ref: cilium/cilium
+    kubeconfig: /etc/kubernetes/admin.conf
+    namespace: kube-system
+    set_values:
+      - value: "cni.exclusive=false"
+      - value: "ipv4.enabled=true"
+      - value: "ipv6.enabled=true"
+      - value: "ipam.mode=cluster-pool"
+      - value: "ipam.operator.clusterPoolIPv4PodCIDRList={{ k8s_pod_cidr_ipv4 }}"
+      - value: "ipam.operator.clusterPoolIPv4MaskSize=24"
+      - value: "ipam.operator.clusterPoolIPv6PodCIDRList={{ k8s_pod_cidr_ipv6 }}"
+      - value: "ipam.operator.clusterPoolIPv6MaskSize=64"
+  run_once: true
+  when: "'cilium.io/v2' not in api_status['apis']"
