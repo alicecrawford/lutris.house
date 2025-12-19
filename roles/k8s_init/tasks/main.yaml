@@ -67,3 +67,32 @@
   loop:
     - kube-controller-manager.yaml
     - kube-scheduler.yaml
+
+- name: make kube directory
+  ansible.builtin.file:
+    path: "~/.kube"
+    state: directory
+    mode: 0750
+  become: false
+  register: dir_info
+
+- name: copy kubeconfig
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ dir_info['path'] }}/config"
+    mode: 0640
+    owner: "{{ dir_info['owner'] }}"
+    group: "{{ dir_info['group'] }}"
+    remote_src: true
+
+- name: Wait for all system pods to be ready
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/kubernetes/admin.conf
+    kind: Pod
+    namespace: kube-system
+    wait: true
+    wait_condition:
+      type: Ready
+      status: "True"
+    wait_sleep: 15
+    wait_timeout: 600
