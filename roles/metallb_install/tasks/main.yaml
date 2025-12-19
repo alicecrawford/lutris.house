@@ -28,3 +28,47 @@
     kubeconfig: /etc/kubernetes/admin.conf
     namespace: metallb-system
   run_once: true
+
+- name: Wait for metallb to be ready
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/kubernetes/admin.conf
+    kind: Pod
+    namespace: metallb-system
+    wait: true
+    wait_condition:
+      type: Ready
+      status: "True"
+    wait_sleep: 15
+    wait_timeout: 600
+  run_once: true
+
+- name: add metallb address pool
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition:
+      apiVersion: metallb.io/v1beta1
+      kind: IPAddressPool
+      metadata:
+        name: default-pool
+        namespace: metallb-system
+      spec:
+        addresses:
+          - 172.16.60.1-172.16.60.200
+          - 2001:5a8:4bd5:ef00::f00d:cbe:0/112
+  run_once: true
+
+- name: add metallb advertisment
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition:
+      apiVersion: metallb.io/v1beta1
+      kind: L2Advertisement
+      metadata:
+        name: default-pool-advertisement
+        namespace: metallb-system
+      spec:
+        ipAddressPools:
+          - default-pool
+  run_once: true
