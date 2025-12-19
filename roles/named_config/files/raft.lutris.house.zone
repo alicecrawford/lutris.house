@@ -13,12 +13,12 @@ $ORIGIN raft.lutris.house.
                               IN NS ns2
                               IN NS ns3
 
-ns1                           IN A 172.16.61.10
-ns2                           IN A 172.16.61.20
-ns3                           IN A 172.16.61.30
+ns1                           IN A 172.16.58.10
+ns2                           IN A 172.16.58.20
+ns3                           IN A 172.16.58.30
 
-k8s-api                       IN A 172.16.61.11
+k8s-api                       IN A 172.16.58.11
 
-alcyone                       IN A 172.16.61.10
-electra                       IN A 172.16.61.20
-merope                        IN A 172.16.61.30
+alcyone                       IN A 172.16.58.10
+electra                       IN A 172.16.58.20
+merope                        IN A 172.16.58.30

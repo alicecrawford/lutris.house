@@ -1,4 +1,3 @@
 ---
-ip_address: 172.16.61.30
-hostname: merope.raft.lutris.house
+ip_address: 172.16.58.30
 ansible_host: "{{ ip_address if use_ip is defined else inventory_hostname }}"

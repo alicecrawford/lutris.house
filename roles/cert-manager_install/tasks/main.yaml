@@ -32,6 +32,19 @@
   when: "not secret_presence['resources']"
   run_once: true
 
+- name: Wait for cert-manager pods to be ready
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/kubernetes/admin.conf
+    kind: Pod
+    namespace: cert-manager
+    wait: true
+    wait_condition:
+      type: Ready
+      status: "True"
+    wait_sleep: 15
+    wait_timeout: 600
+  run_once: true
+
 - name: add letsencrypt setup for dns server
   kubernetes.core.k8s:
     kubeconfig: /etc/kubernetes/admin.conf
@@ -51,7 +64,7 @@
           solvers:
             - dns01:
                 rfc2136:
-                  nameserver: 172.16.61.10:53
+                  nameserver: 172.16.58.10:53
                   tsigKeyName: zone_update.key
                   tsigAlgorithm: HMACSHA256
                   tsigSecretSecretRef:

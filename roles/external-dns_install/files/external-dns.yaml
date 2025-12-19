@@ -70,7 +70,7 @@ spec:
             - --txt-prefix=external-dns-
             - --txt-owner-id=k8s
             - --provider=rfc2136
-            - --rfc2136-host=172.16.61.10
+            - --rfc2136-host=172.16.58.10
             - --rfc2136-port=53
             - --rfc2136-zone=raft.lutris.house
             - --rfc2136-tsig-secret=$(EXT_DNS_SECRET)
