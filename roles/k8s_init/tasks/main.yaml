@@ -96,3 +96,9 @@
       status: "True"
     wait_sleep: 15
     wait_timeout: 600
+
+- name: remove lb exclude label from all nodes
+  ansible.builtin.shell:
+    cmd: kubectl label node --all node.kubernetes.io/exclude-from-external-load-balancers-
+  become: false
+  run_once: true
