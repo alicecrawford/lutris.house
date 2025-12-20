@@ -24,3 +24,12 @@
     - metallb_install
     - cert-manager_install
     - external-dns_install
+- hosts: k8s_init_node
+  become: true
+  vars_prompt:
+    - name: pihole_password
+      prompt: Enter pihole password
+      private: false
+  roles:
+    - pihole_install
+    - monitoring_install
