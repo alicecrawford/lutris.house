@@ -68,6 +68,19 @@
     - kube-controller-manager.yaml
     - kube-scheduler.yaml
 
+- name: Wait for all system pods to be ready
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/kubernetes/admin.conf
+    kind: Pod
+    namespace: kube-system
+    wait: true
+    wait_condition:
+      type: Ready
+      status: "True"
+    wait_sleep: 15
+    wait_timeout: 600
+  run_once: true
+
 - name: make kube directory
   ansible.builtin.file:
     path: "~/.kube"
@@ -84,18 +97,6 @@
     owner: "{{ dir_info['owner'] }}"
     group: "{{ dir_info['group'] }}"
     remote_src: true
-
-- name: Wait for all system pods to be ready
-  kubernetes.core.k8s_info:
-    kubeconfig: /etc/kubernetes/admin.conf
-    kind: Pod
-    namespace: kube-system
-    wait: true
-    wait_condition:
-      type: Ready
-      status: "True"
-    wait_sleep: 15
-    wait_timeout: 600
 
 - name: remove lb exclude label from all nodes
   ansible.builtin.shell:
