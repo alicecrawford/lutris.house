@@ -1,0 +1,120 @@
+---
+- name: Add pihole repository
+  kubernetes.core.helm_repository:
+    name: mojo2600
+    repo_url: https://mojo2600.github.io/pihole-kubernetes/
+    kubeconfig: /etc/kubernetes/admin.conf
+  run_once: true
+
+- name: install piehole
+  kubernetes.core.helm:
+    name: pihole
+    chart_ref: mojo2600/pihole
+    kubeconfig: /etc/kubernetes/admin.conf
+    namespace: pihole
+    create_namespace: true
+    update_repo_cache: true
+    values:
+      DNS1: 8.8.8.8
+      DNS2: 1.1.1.1
+      persistentVolumeClaim:
+        enabled: true
+        storageClass: "longhorn"
+      admin:
+        existingSecret: "pihole-admin"
+      serviceDns:
+        mixedService: true
+        loadBalancerIP: 172.16.60.53
+        type: LoadBalancer
+      serviceDhcp:
+        enabled: false
+      podDnsConfig:
+        enabled: true
+        policy: "None"
+        nameservers:
+          - 127.0.0.1
+          - 8.8.8.8
+      extraEnvVars:
+        FTLCONF_dns_listeningMode: "all"
+        DNSMASQ_USER: "root"
+  run_once: true
+
+- name: get secret presence
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/kubernetes/admin.conf
+    kind: Secret
+    namespace: pihole
+    name: pihole-admin
+  register: secret_presence
+  run_once: true
+
+- name: add pihole secret
+  ansible.builtin.shell:
+    cmd: "kubectl -n pihole create secret generic pihole-admin --from-literal=password={{ pihole_password }}"
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  when: "not secret_presence['resources']"
+  run_once: true
+
+- name: pihole certificate
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: pihole-certificate
+        namespace: pihole
+      spec:
+        dnsNames:
+          - pihole.raft.lutris.house
+        secretName: pihole-certificate
+        issuerRef:
+          name: letsencrypt-dns01-issuer
+          kind: ClusterIssuer
+
+- name: pihole gateway
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition:
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: Gateway
+      metadata:
+        name: pihole-gateway
+        namespace: pihole
+      spec:
+        gatewayClassName: istio
+        listeners:
+          - name: http
+            port: 443
+            protocol: HTTPS
+            allowedRoutes:
+              namespaces:
+                from: Same
+            tls:
+              certificateRefs:
+                - kind: Secret
+                  group: ""
+                  name: pihole-certificate
+
+- name: pihole httproute
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition:
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        name: pihole-route
+        namespace: pihole
+      spec:
+        parentRefs:
+          - name: pihole-gateway
+        hostnames:
+          - "pihole.raft.lutris.house"
+        rules:
+          - backendRefs:
+              - name: pihole-web
+                port: 80
