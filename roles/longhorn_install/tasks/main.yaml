@@ -34,7 +34,7 @@
     name: longhorn
     chart_ref: longhorn/longhorn
     kubeconfig: /etc/kubernetes/admin.conf
-    namespace: longhhorn-system
+    namespace: longhorn-system
     create_namespace: true
   run_once: true
   when: "'longhorn.io/v1beta2' not in api_status['apis']"
