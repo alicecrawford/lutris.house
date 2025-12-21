@@ -1,0 +1,11 @@
+---
+- hosts: k8s_nodes
+  become: true
+  roles:
+    - cilium_install
+    - metrics-server_install
+    - istio_install
+    - longhorn_install
+    - metallb_install
+    - cert-manager_install
+    - external-dns_install

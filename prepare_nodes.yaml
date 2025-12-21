@@ -1,0 +1,21 @@
+---
+- hosts: all
+  become: true
+  roles:
+    - set_hostname
+    - disable_firewall
+    - update_system
+- hosts: k8s_nodes
+  become: true
+  roles:
+    - disable_selinux
+- hosts: k8s_control_nodes
+  become: true
+  roles:
+    - keepalived_install
+    - keepalived_k8s_api
+    - haproxy_config
+- hosts: k8s_nodes
+  become: true
+  roles:
+    - k8s_prereqs
