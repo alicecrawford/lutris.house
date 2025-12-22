@@ -7,6 +7,7 @@
   run_once: true
 
 - name: install monitoring stack
+  run_once: true
   kubernetes.core.helm:
     name: prometheus-stack
     chart_ref: prometheus-community/kube-prometheus-stack
@@ -42,7 +43,8 @@
                   requests:
                     storage: 5Gi
 
-- name: pihole certificate
+- name: monitoring certificate
+  run_once: true
   kubernetes.core.k8s:
     kubeconfig: /etc/kubernetes/admin.conf
     state: present
@@ -62,7 +64,8 @@
           name: letsencrypt-dns01-issuer
           kind: ClusterIssuer
 
-- name: pihole certificate
+- name: monitornig gateway
+  run_once: true
   kubernetes.core.k8s:
     kubeconfig: /etc/kubernetes/admin.conf
     state: present
@@ -87,7 +90,8 @@
                   group: ""
                   name: monitoring-certificate
 
-- name: pihole certificate
+- name: grafana route
+  run_once: true
   kubernetes.core.k8s:
     kubeconfig: /etc/kubernetes/admin.conf
     state: present
@@ -108,7 +112,8 @@
               - name: prometheus-stack-grafana
                 port: 80
 
-- name: pihole certificate
+- name: prometheus route
+  run_once: true
   kubernetes.core.k8s:
     kubeconfig: /etc/kubernetes/admin.conf
     state: present
@@ -128,7 +133,8 @@
               - name: prometheus-stack-kube-prom-prometheus
                 port: 9090
 
-- name: pihole certificate
+- name: alertmanager route
+  run_once: true
   kubernetes.core.k8s:
     kubeconfig: /etc/kubernetes/admin.conf
     state: present

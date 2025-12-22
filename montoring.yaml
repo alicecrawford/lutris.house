@@ -2,4 +2,4 @@
 - hosts: k8s_nodes
   become: true
   roles:
-    - montitoring_install
+    - monitoring_install
