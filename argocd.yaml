@@ -1,0 +1,5 @@
+---
+- hosts: k8s_init_node
+  become: true
+  roles:
+    - argocd_install
