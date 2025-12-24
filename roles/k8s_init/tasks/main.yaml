@@ -44,6 +44,11 @@
     {{ cluster_key.stdout }}
   when: "'k8s_control_nodes' is in group_names and 'k8s_init_node' not in group_names and api_status['failed'] == true"
 
+- name: join worker nodes
+  ansible.builtin.shell: >
+    {{ cluster_join.stdout }}
+  when: "'k8s_nodes' is in group_names and 'k8s_control_nodes' is not in group_names"
+
 - name: Remove control plane node taint
   kubernetes.core.k8s_taint:
     name: "{{ inventory_hostname }}"
@@ -52,12 +57,14 @@
       - key: node-role.kubernetes.io/control-plane
         effect: NoSchedule
     state: absent
+  when: "'k8s_control_nodes' is in group_names"
 
 - name: Fix etcd metric endpoint
   ansible.builtin.replace:
     path: /etc/kubernetes/manifests/etcd.yaml
     regexp: '(--listen-metrics-urls)=http.*:(.*)$'
     replace: '\1=http://0.0.0.0:\2'
+  when: "'k8s_control_nodes' is in group_names"
 
 - name: Fix controller-manager and scheduler metric endpoints
   ansible.builtin.replace:
@@ -67,6 +74,7 @@
   loop:
     - kube-controller-manager.yaml
     - kube-scheduler.yaml
+  when: "'k8s_control_nodes' is in group_names"
 
 - name: Wait for all system pods to be ready
   kubernetes.core.k8s_info:
