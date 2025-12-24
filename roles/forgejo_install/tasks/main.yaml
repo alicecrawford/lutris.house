@@ -1,0 +1,83 @@
+---
+- name: create namespace
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: forgejo
+
+- name: generate password and assign to variable
+  ansible.builtin.set_fact:
+    database_password: "{{ lookup('community.general.random_string', special=false, length=32) }}"
+  no_log: true
+
+- name: create secret for pg user
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition:
+      apiVersion: v1
+      data:
+        username: Zm9yZ2Vqbw==
+        password: "{{ database_password | ansible.builtin.b64encode }}"
+      kind: Secret
+      metadata:
+        name: forgejo-pg-user
+        namespace: forgejo
+      type: kubernetes.io/basic-auth
+
+- name: create database
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition:
+      apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      metadata:
+        name: forgejodb
+        namespace: forgejo
+      spec:
+        instances: 3
+        storage:
+          size: 2Gi
+          storageClass: longhorn
+        bootstrap:
+          initdb:
+            database: forgejo
+            owner: forgejo
+            secret:
+              name: forgejo-pg-user
+
+- name: install forgejo
+  kubernetes.core.helm:
+    name: forgejo
+    chart_ref: oci://code.forgejo.org/forgejo-helm/forgejo
+    kubeconfig: /etc/kubernetes/admin.conf
+    namespace: forgejo
+    create_namespace: true
+    values:
+      global:
+        storageClass: longhorn
+      clusterDomain: "{{ k8s_svc_dns }}"
+      securityContext:
+        capabilities:
+          add: ["SYS_CHROOT"]
+      gitea:
+        config:
+          database:
+            DB_TYPE: postgres
+            HOST: "forgejodb-rw:5432"
+            USER: forgejo
+            PASSWD: "{{ database_password }}"
+            NAME: forgejo
+      service:
+        ssh:
+          type: LoadBalancer
+          loadBalancerIP: 172.16.60.200
+          annotations:
+            metallb.io/allow-shared-ip: forgejo
+      persistence:
+        size: 60Gi
