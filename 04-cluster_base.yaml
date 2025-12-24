@@ -9,3 +9,4 @@
     - metallb_install
     - cert-manager_install
     - external-dns_install
+    - cnpg_install
