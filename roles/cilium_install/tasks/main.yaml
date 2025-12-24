@@ -27,5 +27,7 @@
       - value: "ipam.operator.clusterPoolIPv4MaskSize=24"
       - value: "ipam.operator.clusterPoolIPv6PodCIDRList={{ k8s_pod_cidr_ipv6 }}"
       - value: "ipam.operator.clusterPoolIPv6MaskSize=64"
+      - value: "encryption.enabled=true"
+      - value: "encryption.type=wireguard"
   run_once: true
   when: "'cilium.io/v2' not in api_status['apis']"
