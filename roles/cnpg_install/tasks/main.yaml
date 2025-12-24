@@ -1,0 +1,9 @@
+---
+- name: install cert-manager
+  kubernetes.core.k8s:
+    kubeconfig: /etc/kubernetes/admin.conf
+    state: present
+    definition: "{{ lookup('file', 'cnpg-1.28.0.yaml') | from_yaml_all }}"
+    server_side_apply:
+      field_manager: ansible
+  run_once: true
