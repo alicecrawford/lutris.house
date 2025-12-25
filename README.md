@@ -1,5 +1,7 @@
 # lutris.house kubernetes setup scripts
 
+note: currently the gateway for forgejo does not work
+
 ## overview
 
 these are a set of ansible playbooks written to setup a kubernetes cluster.
