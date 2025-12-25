@@ -16,7 +16,7 @@ $ORIGIN {{ dns_domain_name }}.
 ns{{ loop.index }}                           IN A {{ hostvars[host]['ansible_default_ipv4']['address'] }}
 {% endfor %}
 
-{{ k8s_svc_dns.split('.')[0] }}                       IN A {{ k8s_api_loadbalancer_ip }}
+{{ k8s_api_name.split('.')[0] }}                       IN A {{ k8s_api_loadbalancer_ip }}
 
 {% for host in groups['all'] %}
 {{ host.split('.')[0] }}                       IN A {{ hostvars[host]['ip_address'] }}
