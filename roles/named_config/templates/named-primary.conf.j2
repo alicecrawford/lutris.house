@@ -56,7 +56,9 @@ zone "{{ dns_domain_name }}." {
   notify yes;
 
   allow-transfer {
-    172.16.0.0/18;
+  {% for h in dns_allow_transfer %}
+    {{ h }};
+  {% endfor %}
   };
 
   allow-update {

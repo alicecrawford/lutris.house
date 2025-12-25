@@ -2,6 +2,8 @@
 #  DNS Settings
 dns_domain_name: raft.lutris.house
 dns_loadbalancer_ip: 172.16.58.253
+dns_allow_transfer:
+  - 172.16.0.0/18
 
 #  Kubernetes settings
 k8s_version: "1.34"
