@@ -1,33 +1,61 @@
 ---
 #  DNS Settings
+#
+#  the subdomain the dns server setup in step 1 will manage
 dns_domain_name: raft.lutris.house
+
+#  the virtual ip used for load balancing dns
 dns_loadbalancer_ip: 172.16.58.253
+
+#  list of ip addresses allowed to axfr/ixfr as secondary
 dns_allow_transfer:
   - 172.16.0.0/18
 
+
 #  Kubernetes settings
+#
+#  Kubernetes version
 k8s_version: "1.34"
+
+#  Service DNS domain
+k8s_svc_dns: "polycule.{{ dns_domain_name }}"
+
+#  Loadbalanced API name and IP address
+k8s_api_name: "k8s-api.{{ dns_domain_name }}"
+k8s_api_loadbalancer_ip: 172.16.58.11
+
+#  IP ranges used for metallb
+k8s_svc_loadbalancer_ipv4: 172.16.60.1-172.16.60.200
+k8s_svc_loadbalancer_ipv6: 2001:5a8:4bd5:ef00::f00d:cbe:0/112
+
+#  Pod and service CIDRs
 k8s_pod_cidr_ipv4: 10.160.0.0/12
 k8s_pod_cidr_ipv6: "fd00:cbe:0::/56"
 k8s_svc_cidr_ipv4: 10.128.0.0/16
 k8s_svc_cidr_ipv6: "fd00:cbe:1::/112"
 k8s_pod_cidr: "{{ k8s_pod_cidr_ipv4 }},{{ k8s_pod_cidr_ipv6 }}"
 k8s_svc_cidr: "{{ k8s_svc_cidr_ipv4 }},{{ k8s_svc_cidr_ipv6 }}"
-k8s_svc_dns: "polycule.{{ dns_domain_name }}"
-k8s_api_name: "k8s-api.{{ dns_domain_name }}"
-k8s_api_loadbalancer_ip: 172.16.58.11
-k8s_svc_loadbalancer_ipv4: 172.16.60.1-172.16.60.200
-k8s_svc_loadbalancer_ipv6: 2001:5a8:4bd5:ef00::f00d:cbe:0/112
-k8s_all_worker_nodes: false
+
 
 #  Service settings
+#
+#  Cert-manager
 letsencrypt_email: alice@tuxnami.org
-forgejo_loadbanacer_ip: 172.16.60.200
-forgejo_volume_size: 60Gi
+
+#  Set this to staging when testing as to not hit letsencrypt limits
+acme_server: https://acme-staging-v02.api.letsencrypt.org/directory
+
+#  Monitoring storage sizes
 monitoring_prometheus_volume_size: 20Gi
 monitoring_alertmanager_volume_size: 5Gi
 monitoring_grafana_volume_size: 5Gi
+
+#  Forgejo volume size
+forgejo_volume_size: 60Gi
+
+#  Loadbalancer IP for pihole
 pihole_loadbalancer_ip: 172.16.60.53
+
 
 #  Extra packages for managed nodes
 extra_packages:

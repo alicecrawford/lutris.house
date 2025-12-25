@@ -48,7 +48,7 @@
         namespace: cert-manager
       spec:
         acme:
-          server: https://acme-staging-v02.api.letsencrypt.org/directory
+          server: "{{ acme_server }}"
           email: "{{ letsencrypt_email }}"
           privateKeySecretRef:
             name: letsencrypt-dns01-api-key
