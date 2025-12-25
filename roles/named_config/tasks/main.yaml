@@ -3,9 +3,7 @@
   ansible.builtin.dnf5:
     name: bind
     state: latest
-- name: Get that ip address
-  debug:
-    msg: "{{ ansible_facts['default_ipv4']['address'] }}"
+
 - name: Copy primary dns configuration file
   ansible.builtin.template:
     src: named-primary.conf.j2
@@ -14,15 +12,17 @@
     group: root
     mode: 0644
   when: "'dns_primary' in group_names"
+
 - name: Copy zone file
-  ansible.builtin.copy:
-    src: raft.lutris.house.zone
+  ansible.builtin.template:
+    src: raft.lutris.house.zone.j2
     dest: /var/named/raft.lutris.house.zone
     owner: named
     group: named
     mode: 0644
     force: false
   when: "'dns_primary' in group_names"
+
 - name: Create update key
   vars:
     key_file: /var/named/zone_update.key
@@ -30,6 +30,7 @@
     cmd: "tsig-keygen -a hmac-sha256 zone_update.key > {{ key_file }}"
     creates: "{{ key_file }}"
   when: "'dns_primary' in group_names"
+
 - name: Copy secondary dns configuration file
   ansible.builtin.template:
     src: named-secondary.conf.j2
@@ -38,6 +39,7 @@
     group: root
     mode: 0644
   when: "'dns_primary' not in group_names"
+
 - name: Start named service
   ansible.builtin.systemd_service:
     name: named

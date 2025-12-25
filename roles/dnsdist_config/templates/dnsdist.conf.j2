@@ -1,9 +1,9 @@
-newServer({address="172.16.58.10", checkName="k8s-api.raft.lutris.house", checkInterval=60})
-newServer({address="172.16.58.20", checkName="k8s-api.raft.lutris.house", checkInterval=60})
-newServer({address="172.16.58.30", checkName="k8s-api.raft.lutris.house", checkInterval=60})
+{% for host in groups['dns_servers'] %}
+newServer({address="{{ hostvars[host]['ansible_default_ipv4']['address'] }}", checkName="{{ k8s_api_name }}", checkInterval=60})
+{% endfor %}
 
 setServerPolicy(roundrobin)
 
-addLocal("172.16.58.253:53")
+addLocal("{{ dns_loadbalancer_ip }}:53")
 
 controlSocket("127.0.0.1:5199")

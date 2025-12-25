@@ -62,7 +62,7 @@ defaults
     maxconn                 3000
 
 frontend kubernetes-api
-    bind 172.16.58.11:6443
+    bind {{ k8s_api_name }}:6443
     mode tcp
     option tcplog
     default_backend k8s-control-plane
@@ -72,6 +72,6 @@ backend k8s-control-plane
     balance roundrobin
     option tcp-check
     default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
-    server control-node-01 172.16.58.10:6442 check
-    server control-node-02 172.16.58.20:6442 check
-    server control-node-03 172.16.58.30:6442 check
+{% for host in groups['k8s_control_nodes'] %}
+    server control-node-{{ loop.index }} {{ host }} check
+{% endfor %}

@@ -4,8 +4,8 @@
     name: dnsdist
     state: latest
 - name: Copy config file
-  ansible.builtin.copy:
-    src: dnsdist.conf
+  ansible.builtin.template:
+    src: dnsdist.conf.j2
     dest: /etc/dnsdist/dnsdist.conf
     owner: root
     group: dnsdist

@@ -54,8 +54,8 @@
         namespace: metallb-system
       spec:
         addresses:
-          - 172.16.60.1-172.16.60.200
-          - 2001:5a8:4bd5:ef00::f00d:cbe:0/112
+          - "{{ k8s_svc_loadbalancer_ipv4 }}"
+          - "{{ k8s_svc_loadbalancer_ipv6 }}"
   run_once: true
 
 - name: add metallb advertisment

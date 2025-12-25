@@ -25,13 +25,15 @@
                 accessModes: ["ReadWriteOnce"]
                 resources:
                   requests:
-                    storage: 20Gi
+                    storage: "{{ monitoring_prometheus_volume_size }}"
+
       grafana:
         persistence:
           enabled: true
           storageClassName: longhorn
           accessModes: ["ReadWriteOnce"]
-          size: 5Gi
+          size: "{{ monitoring_grafana_volume_size }}"
+
       alertmanager:
         alertmanagerSpec:
           storage:
@@ -41,7 +43,7 @@
                 accessModes: ["ReadWriteOnce"]
                 resources:
                   requests:
-                    storage: 5Gi
+                    storage: "{{ monitoring_alertmanager_volume_size }}"
 
 - name: monitoring certificate
   run_once: true
@@ -56,9 +58,9 @@
         namespace: monitoring
       spec:
         dnsNames:
-          - grafana.raft.lutris.house
-          - prometheus.raft.lutris.house
-          - alertmanager.raft.lutris.house
+          - "grafana.{{ dns_domain_name }}"
+          - "prometheus.{{ dns_domain_name }}"
+          - "alertmanager.{{ dns_domain_name }}"
         secretName: monitoring-certificate
         issuerRef:
           name: letsencrypt-dns01-issuer
@@ -106,7 +108,7 @@
         parentRefs:
           - name: monitoring-gateway
         hostnames:
-          - "grafana.raft.lutris.house"
+          - "grafana.{{ dns_domain_name }}"
         rules:
           - backendRefs:
               - name: prometheus-stack-grafana
@@ -127,7 +129,7 @@
         parentRefs:
           - name: monitoring-gateway
         hostnames:
-          - "prometheus.raft.lutris.house"
+          - "prometheus.{{ dns_domain_name }}"
         rules:
           - backendRefs:
               - name: prometheus-stack-kube-prom-prometheus
@@ -149,7 +151,7 @@
         parentRefs:
           - name: monitoring-gateway
         hostnames:
-          - "alertmanager.raft.lutris.house"
+          - "alertmanager.{{ dns_domain_name }}"
         rules:
           - backendRefs:
               - name: prometheus-stack-kube-prom-alertmanager

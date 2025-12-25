@@ -31,7 +31,7 @@
         namespace: argocd
       spec:
         dnsNames:
-          - argocd.raft.lutris.house
+          - "argocd.{{ dns_domain_name }}"
         secretName: argocd-certificate
         issuerRef:
           name: letsencrypt-dns01-issuer
@@ -76,7 +76,7 @@
         parentRefs:
           - name: argocd-gateway
         hostnames:
-          - "argocd.raft.lutris.house"
+          - "argocd.{{ dns_domain_name }}"
         rules:
           - backendRefs:
               - name: argocd-server

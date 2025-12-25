@@ -24,7 +24,7 @@
         existingSecret: "pihole-admin"
       serviceDns:
         mixedService: true
-        loadBalancerIP: 172.16.60.53
+        loadBalancerIP: "{{ pihole_loadbalancer_ip }}"
         type: LoadBalancer
       serviceDhcp:
         enabled: false
@@ -68,7 +68,7 @@
         namespace: pihole
       spec:
         dnsNames:
-          - pihole.raft.lutris.house
+          - "pihole.{{ dns_domain_name }}"
         secretName: pihole-certificate
         issuerRef:
           name: letsencrypt-dns01-issuer
@@ -113,7 +113,7 @@
         parentRefs:
           - name: pihole-gateway
         hostnames:
-          - "pihole.raft.lutris.house"
+          - "pihole.{{ dns_domain_name }}"
         rules:
           - backendRefs:
               - name: pihole-web

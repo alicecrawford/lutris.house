@@ -1,0 +1,23 @@
+$TTL 5m
+$ORIGIN {{ dns_domain_name }}.
+
+@                             IN SOA ns1.{{ dns_domain_name }}. hostmaster.{{ dns_domain_name }}. (
+                                                  1 ; serial number
+                                                  15m ; refresh
+                                                  1m ; retry
+                                                  24h ; expiry
+                                                  1m ; nxdomain ttl
+                                                )
+{% for host in groups['dns_servers'] %}
+                              IN NS ns{{ loop.index }}
+{% endfor %}
+
+{% for host in groups['dns_servers'] %}
+ns{{ loop.index }}                           IN A {{ hostvars[host]['ansible_default_ipv4']['address'] }}
+{% endfor %}
+
+{{ k8s_svc_dns.split('.')[0] }}                       IN A {{ k8s_api_loadbalancer_ip }}
+
+{% for host in groups['all'] %}
+{{ host.split('.')[0] }}                       IN A {{ hostvars[host]['ip_address'] }}
+{% endfor %}

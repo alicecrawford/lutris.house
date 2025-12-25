@@ -5,6 +5,6 @@ vrrp_instance VI_DNS {
     priority {{ k_priority }}
 
     virtual_ipaddress {
-        172.16.58.253/18
+        {{ dns_loadbalancer_ip }}/18
     }
 }

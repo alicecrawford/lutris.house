@@ -76,8 +76,12 @@
       service:
         ssh:
           type: LoadBalancer
-          loadBalancerIP: 172.16.60.200
+          loadBalancerIP: "{{ forgejo_loadbanacer_ip }}"
           annotations:
             metallb.io/allow-shared-ip: forgejo
       persistence:
-        size: 60Gi
+        size: "{{ forgejo_volume_size }}"
+
+- name: tmp
+  debug:
+    msg: "{{ groups['all'] }}"

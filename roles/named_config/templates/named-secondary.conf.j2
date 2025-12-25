@@ -52,7 +52,7 @@ zone "raft.lutris.house." {
   file "raft.lutris.house.save";
   
   primaries {
-    172.16.58.10;
+    {{ hostvars[groups['dns_primary'][0]]['ansible_default_ipv4']['address'] }};
   };
   
   allow-update-forwarding { any; };

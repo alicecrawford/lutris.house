@@ -21,6 +21,10 @@ k8s_svc_loadbalancer_ipv6: 2001:5a8:4bd5:ef00::f00d:cbe:0/112
 letsencrypt_email: alice@tuxnami.org
 forgejo_loadbanacer_ip: 172.16.60.200
 forgejo_volume_size: 60Gi
+monitoring_prometheus_volume_size: 20Gi
+monitoring_alertmanager_volume_size: 5Gi
+monitoring_grafana_volume_size: 5Gi
+pihole_loadbalancer_ip: 172.16.60.53
 
 #  Extra packages for managed nodes
 extra_packages:

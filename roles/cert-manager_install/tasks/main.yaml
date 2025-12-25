@@ -58,13 +58,13 @@
       spec:
         acme:
           server: https://acme-v02.api.letsencrypt.org/directory
-          email: alice@tuxnami.org
+          email: "{{ letsencrypt_email }}"
           privateKeySecretRef:
             name: letsencrypt-dns01-api-key
           solvers:
             - dns01:
                 rfc2136:
-                  nameserver: 172.16.58.10:53
+                  nameserver: "{{ hostvars[groups['dns_primary'][0]]['ansible_default_ipv4']['address'] }}:53"
                   tsigKeyName: zone_update.key
                   tsigAlgorithm: HMACSHA256
                   tsigSecretSecretRef:
