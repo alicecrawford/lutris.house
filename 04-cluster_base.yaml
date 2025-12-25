@@ -1,6 +1,21 @@
 ---
-- hosts: k8s_nodes
+- hosts: dns_primary
   become: true
+  tasks:
+    - name: get dns key
+      ansible.builtin.shell:
+        cmd: grep secret /var/named/zone_update.key | sed -e 's/.*"\(.*\)".*/\1/'
+      register: dns_key
+    - name: set the key as a fact on the dns_primary
+      ansible.builtin.set_fact:
+        dns_key: "{{ dns_key.stdout }}"
+
+- hosts: k8s_init_node
+  pre_tasks:
+    - name: set the key as a fact on the init_node
+      ansible.builtin.set_fact:
+        dns_key: "{{ hostvars[groups['dns_primary'][0]]['dns_key'] }}"
+        dns_primary_ip: "{{ hostvars[groups['dns_primary'][0]]['ansible_default_ipv4']['address'] }}"
   roles:
     - cilium_install
     - metrics-server_install

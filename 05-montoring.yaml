@@ -1,5 +1,4 @@
 ---
-- hosts: k8s_nodes
-  become: true
+- hosts: k8s_init_node
   roles:
     - monitoring_install

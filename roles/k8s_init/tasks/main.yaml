@@ -26,7 +26,6 @@
     tail -n 1 | tr -d '[:space:]'
   register: cluster_key
   when: "'k8s_init_node' in group_names"
-  run_once: true
   changed_when: false
 
 - name: get join command
@@ -34,19 +33,25 @@
     kubeadm token create --print-join-command
   register: cluster_join
   when: "'k8s_init_node' in group_names"
-  run_once: true
+  changed_when: false
+
+- name: fact setting mission
+  ansible.builtin.set_fact:
+    cluster_key: "{{ cluster_key.stdout }}"
+    cluster_join: "{{ cluster_join.stdout }}"
+  when: "'k8s_init_node' in group_names"
   changed_when: false
 
 - name: join other control plane nodes
   ansible.builtin.shell: >
-    {{ cluster_join.stdout }}
+    {{ hostvars[groups['k8s_init_node'][0]]['cluster_join'] }}
     --apiserver-bind-port 6442 --control-plane --certificate-key
-    {{ cluster_key.stdout }}
+    {{ hostvars[groups['k8s_init_node'][0]]['cluster_key'] }}
   when: "'k8s_control_nodes' is in group_names and 'k8s_init_node' not in group_names and api_status['failed'] == true"
 
 - name: join worker nodes
   ansible.builtin.shell: >
-    {{ cluster_join.stdout }}
+    {{ hostvars[groups['k8s_init_node'][0]]['cluster_join'] }}
   when: "'k8s_nodes' is in group_names and 'k8s_control_nodes' is not in group_names"
 
 - name: Remove control plane node taint
@@ -57,7 +62,7 @@
       - key: node-role.kubernetes.io/control-plane
         effect: NoSchedule
     state: absent
-  when: "'k8s_control_nodes' is in group_names"
+  when: "'k8s_control_nodes' is in group_names and k8s_all_worker_nodes"
 
 - name: Fix etcd metric endpoint
   ansible.builtin.replace:
@@ -87,7 +92,7 @@
       status: "True"
     wait_sleep: 15
     wait_timeout: 600
-  run_once: true
+  when: "'k8s_init_node' in group_names"
 
 - name: make kube directory
   ansible.builtin.file:
@@ -112,3 +117,4 @@
     cmd: kubectl label node --all node.kubernetes.io/exclude-from-external-load-balancers-
   become: false
   run_once: true
+  when: "k8s_all_worker_nodes"

@@ -11,6 +11,8 @@ k8s_packages:
   - containerd
   - python3-kubernetes
   - helm
+  - nfs-utils
+  - iscsi-initiator-utils
 
 #  Kubernetes modules
 k8s_modules:
@@ -20,6 +22,7 @@ k8s_modules:
   - ip6_tables
   - ip6table_mangle
   - ip6table_raw
+  - iscsi_tcp
 
 #  Sysctls for Kubernetes
 k8s_sysctl:

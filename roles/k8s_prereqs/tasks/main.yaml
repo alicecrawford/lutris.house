@@ -3,16 +3,19 @@
   ansible.builtin.dnf5:
     name: "{{ k8s_packages }}"
     state: latest
+
 - name: disable zram service
   ansible.builtin.systemd_service:
     name: swap-create@zram0
     enabled: false
     state: stopped
   ignore_errors: true
+
 - name: remove zram package
   ansible.builtin.dnf5:
     name: zram-generator-defaults
     state: absent
+
 - name: ensure cri-o conf dir exists
   ansible.builtin.file:
     path: /etc/crio/crio.conf.d
@@ -20,6 +23,7 @@
     owner: root
     group: root
     mode: 0755
+
 - name: copy cri-o additional config
   ansible.builtin.copy:
     src: 50-short-name-fix.conf
@@ -27,12 +31,14 @@
     owner: root
     group: root
     mode: 0644
+
 - name: setup modules
   community.general.modprobe:
     name: "{{ item }}"
     persistent: present
     state: present
   loop: "{{ k8s_modules }}"
+
 - name: setup sysctls
   ansible.posix.sysctl:
     name: "{{ item }}"
@@ -41,6 +47,7 @@
     sysctl_set: true
     reload: true
   loop: "{{ k8s_sysctl }}"
+
 - name: start services
   ansible.builtin.systemd_service:
     name: "{{ item }}"
@@ -49,3 +56,4 @@
   loop:
     - crio
     - kubelet
+    - iscsid

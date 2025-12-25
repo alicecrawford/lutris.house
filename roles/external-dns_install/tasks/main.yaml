@@ -1,8 +1,6 @@
 ---
 - name: external-dns namespace
-  run_once: true
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: v1
@@ -13,9 +11,7 @@
           name: external-dns
 
 - name: external-dns clusterrole
-  run_once: true
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: rbac.authorization.k8s.io/v1
@@ -34,9 +30,7 @@
             - list
 
 - name: external-dns serviceaccount
-  run_once: true
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: v1
@@ -46,9 +40,7 @@
         namespace: external-dns
 
 - name: external-dns cluster role binding
-  run_once: true
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: rbac.authorization.k8s.io/v1
@@ -66,9 +58,7 @@
           namespace: external-dns
 
 - name: external-dns
-  run_once: true
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: apps/v1
@@ -100,7 +90,7 @@
                   - --txt-prefix=external-dns-
                   - --txt-owner-id=k8s
                   - --provider=rfc2136
-                  - "--rfc2136-host={{ hostvars[groups['dns_primary'][0]]['ansible_default_ipv4']['address'] }}"
+                  - "--rfc2136-host={{ dns_primary_ip }}"
                   - --rfc2136-port=53
                   - "--rfc2136-zone={{ dns_domain_name }}"
                   - --rfc2136-tsig-secret=$(EXT_DNS_SECRET)
@@ -117,24 +107,20 @@
 
 - name: get secret presence
   kubernetes.core.k8s_info:
-    kubeconfig: /etc/kubernetes/admin.conf
     kind: Secret
     namespace: external-dns
     name: external-dns
   register: secret_presence
-  run_once: true
-
-- name: get dns key
-  ansible.builtin.shell:
-    cmd: grep secret /var/named/zone_update.key | sed -e 's/.*"\(.*\)".*/\1/'
-  register: dns_key
-  when: "'dns_primary' in group_names and not secret_presence['resources']"
-  run_once: true
 
 - name: add dns key secret
-  ansible.builtin.shell:
-    cmd: "kubectl -n external-dns create secret generic external-dns --from-literal=secret={{ dns_key.stdout }}"
-  environment:
-    KUBECONFIG: /etc/kubernetes/admin.conf
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: external-dns
+        namespace: external-dns
+      data:
+        secret: "{{ dns_key | ansible.builtin.b64encode }}"
   when: "not secret_presence['resources']"
-  run_once: true

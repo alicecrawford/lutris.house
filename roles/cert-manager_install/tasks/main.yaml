@@ -1,40 +1,33 @@
 ---
 - name: install cert-manager
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition: "{{ lookup('file', 'cert-manager.yaml') | from_yaml_all }}"
     server_side_apply:
       field_manager: ansible
-  run_once: true
 
 - name: get secret presence
   kubernetes.core.k8s_info:
-    kubeconfig: /etc/kubernetes/admin.conf
     kind: Secret
     namespace: cert-manager
     name: tsig-secret
   register: secret_presence
-  run_once: true
-
-- name: get dns key
-  ansible.builtin.shell:
-    cmd: grep secret /var/named/zone_update.key | sed -e 's/.*"\(.*\)".*/\1/'
-  register: dns_key
-  when: "'dns_primary' in group_names and not secret_presence['resources']"
-  run_once: true
 
 - name: add dns key secret
-  ansible.builtin.shell:
-    cmd: "kubectl -n cert-manager create secret generic tsig-secret --from-literal=tsig-secret-key={{ dns_key.stdout }}"
-  environment:
-    KUBECONFIG: /etc/kubernetes/admin.conf
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      data:
+        tsig-secret-key: "{{ dns_key | ansible.builtin.b64encode }}"
+      kind: Secret
+      metadata:
+        name: tsig-secret
+        namespace: cert-manager
   when: "not secret_presence['resources']"
-  run_once: true
 
 - name: Wait for cert-manager pods to be ready
   kubernetes.core.k8s_info:
-    kubeconfig: /etc/kubernetes/admin.conf
     kind: Pod
     namespace: cert-manager
     wait: true
@@ -43,11 +36,9 @@
       status: "True"
     wait_sleep: 15
     wait_timeout: 600
-  run_once: true
 
 - name: add letsencrypt setup for dns server
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: cert-manager.io/v1
@@ -57,17 +48,16 @@
         namespace: cert-manager
       spec:
         acme:
-          server: https://acme-v02.api.letsencrypt.org/directory
+          server: https://acme-staging-v02.api.letsencrypt.org/directory
           email: "{{ letsencrypt_email }}"
           privateKeySecretRef:
             name: letsencrypt-dns01-api-key
           solvers:
             - dns01:
                 rfc2136:
-                  nameserver: "{{ hostvars[groups['dns_primary'][0]]['ansible_default_ipv4']['address'] }}:53"
+                  nameserver: "{{ dns_primary_ip }}:53"
                   tsigKeyName: zone_update.key
                   tsigAlgorithm: HMACSHA256
                   tsigSecretSecretRef:
                     name: tsig-secret
                     key: tsig-secret-key
-  run_once: true

@@ -3,12 +3,9 @@
   kubernetes.core.helm_repository:
     name: metallb
     repo_url: https://metallb.github.io/metallb
-    kubeconfig: /etc/kubernetes/admin.conf
-  run_once: true
 
 - name: create metallb namespace
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: v1
@@ -19,19 +16,15 @@
           pod-security.kubernetes.io/enforce: privileged
           pod-security.kubernetes.io/audit: privileged
           pod-security.kubernetes.io/warn: privileged
-  run_once: true
 
 - name: install metallb
   kubernetes.core.helm:
     name: metallb
     chart_ref: metallb/metallb
-    kubeconfig: /etc/kubernetes/admin.conf
     namespace: metallb-system
-  run_once: true
 
 - name: Wait for metallb to be ready
   kubernetes.core.k8s_info:
-    kubeconfig: /etc/kubernetes/admin.conf
     kind: Pod
     namespace: metallb-system
     wait: true
@@ -40,11 +33,9 @@
       status: "True"
     wait_sleep: 15
     wait_timeout: 600
-  run_once: true
 
 - name: add metallb address pool
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: metallb.io/v1beta1
@@ -56,11 +47,9 @@
         addresses:
           - "{{ k8s_svc_loadbalancer_ipv4 }}"
           - "{{ k8s_svc_loadbalancer_ipv6 }}"
-  run_once: true
 
 - name: add metallb advertisment
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: metallb.io/v1beta1
@@ -71,4 +60,3 @@
       spec:
         ipAddressPools:
           - default-pool
-  run_once: true

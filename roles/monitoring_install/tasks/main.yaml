@@ -3,15 +3,11 @@
   kubernetes.core.helm_repository:
     name: prometheus-community
     repo_url: https://prometheus-community.github.io/helm-charts
-    kubeconfig: /etc/kubernetes/admin.conf
-  run_once: true
 
 - name: install monitoring stack
-  run_once: true
   kubernetes.core.helm:
     name: prometheus-stack
     chart_ref: prometheus-community/kube-prometheus-stack
-    kubeconfig: /etc/kubernetes/admin.conf
     namespace: monitoring
     create_namespace: true
     update_repo_cache: true
@@ -46,9 +42,7 @@
                     storage: "{{ monitoring_alertmanager_volume_size }}"
 
 - name: monitoring certificate
-  run_once: true
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: cert-manager.io/v1
@@ -67,9 +61,7 @@
           kind: ClusterIssuer
 
 - name: monitornig gateway
-  run_once: true
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: gateway.networking.k8s.io/v1
@@ -93,9 +85,7 @@
                   name: monitoring-certificate
 
 - name: grafana route
-  run_once: true
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
 
@@ -115,9 +105,7 @@
                 port: 80
 
 - name: prometheus route
-  run_once: true
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: gateway.networking.k8s.io/v1
@@ -136,9 +124,7 @@
                 port: 9090
 
 - name: alertmanager route
-  run_once: true
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
 

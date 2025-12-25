@@ -3,20 +3,15 @@
   kubernetes.core.helm_repository:
     name: cilium
     repo_url: https://helm.cilium.io/
-    kubeconfig: /etc/kubernetes/admin.conf
-  run_once: true
 
 - name: get cluster info
   kubernetes.core.k8s_cluster_info:
-    kubeconfig: /etc/kubernetes/admin.conf
   register: api_status
-  run_once: true
 
 - name: install cilium
   kubernetes.core.helm:
     name: cilium
     chart_ref: cilium/cilium
-    kubeconfig: /etc/kubernetes/admin.conf
     namespace: kube-system
     set_values:
       - value: "cni.exclusive=false"
@@ -29,5 +24,4 @@
       - value: "ipam.operator.clusterPoolIPv6MaskSize=64"
       - value: "encryption.enabled=true"
       - value: "encryption.type=wireguard"
-  run_once: true
   when: "'cilium.io/v2' not in api_status['apis']"

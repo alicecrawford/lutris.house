@@ -3,14 +3,11 @@
   kubernetes.core.helm_repository:
     name: mojo2600
     repo_url: https://mojo2600.github.io/pihole-kubernetes/
-    kubeconfig: /etc/kubernetes/admin.conf
-  run_once: true
 
 - name: install piehole
   kubernetes.core.helm:
     name: pihole
     chart_ref: mojo2600/pihole
-    kubeconfig: /etc/kubernetes/admin.conf
     namespace: pihole
     create_namespace: true
     update_repo_cache: true
@@ -37,28 +34,29 @@
       extraEnvVars:
         FTLCONF_dns_listeningMode: "all"
         DNSMASQ_USER: "root"
-  run_once: true
 
 - name: get secret presence
   kubernetes.core.k8s_info:
-    kubeconfig: /etc/kubernetes/admin.conf
     kind: Secret
     namespace: pihole
     name: pihole-admin
   register: secret_presence
-  run_once: true
 
 - name: add pihole secret
-  ansible.builtin.shell:
-    cmd: "kubectl -n pihole create secret generic pihole-admin --from-literal=password={{ pihole_password }}"
-  environment:
-    KUBECONFIG: /etc/kubernetes/admin.conf
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: pihole-admin
+        namespace: pihole
+      data:
+        password: "{{ pihole_password | ansible.builtin.b64encode }}"
   when: "not secret_presence['resources']"
-  run_once: true
 
 - name: pihole certificate
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: cert-manager.io/v1
@@ -76,7 +74,6 @@
 
 - name: pihole gateway
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: gateway.networking.k8s.io/v1
@@ -101,7 +98,6 @@
 
 - name: pihole httproute
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: gateway.networking.k8s.io/v1

@@ -1,6 +1,5 @@
 ---
 - hosts: k8s_init_node
-  become: true
   vars_prompt:
     - name: pihole_password
       prompt: Enter pihole password

@@ -1,7 +1,6 @@
 ---
 - name: create namespace
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: v1
@@ -16,16 +15,13 @@
 
 - name: get secret presence
   kubernetes.core.k8s_info:
-    kubeconfig: /etc/kubernetes/admin.conf
     kind: Secret
     namespace: forgejo
     name: forgejo-pg-user
   register: secret_presence
-  run_once: true
 
 - name: create secret for pg user
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: v1
@@ -41,7 +37,6 @@
 
 - name: create database
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: postgresql.cnpg.io/v1
@@ -66,7 +61,6 @@
   kubernetes.core.helm:
     name: forgejo
     chart_ref: oci://code.forgejo.org/forgejo-helm/forgejo
-    kubeconfig: /etc/kubernetes/admin.conf
     namespace: forgejo
     create_namespace: true
     values:
@@ -84,19 +78,12 @@
             USER: forgejo
             PASSWD: "{{ database_password }}"
             NAME: forgejo
-      service:
-        ssh:
-          type: LoadBalancer
-          loadBalancerIP: "{{ forgejo_loadbanacer_ip }}"
-          annotations:
-            metallb.io/allow-shared-ip: forgejo
       persistence:
         size: "{{ forgejo_volume_size }}"
   when: "not secret_presence['resources']"
 
 - name: forgejo certificate
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: cert-manager.io/v1
@@ -114,7 +101,6 @@
 
 - name: forgejo gateway
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
     state: present
     definition:
       apiVersion: gateway.networking.k8s.io/v1
@@ -122,8 +108,6 @@
       metadata:
         name: forgejo-gateway
         namespace: forgejo
-        annotations:
-          metallb.io/allow-shared-ip: forgejo
       spec:
         gatewayClassName: istio
         listeners:
@@ -139,22 +123,40 @@
                   group: ""
                   name: forgejo-certificate
 
-- name: forgejo httproute
+- name: forgejo tcproute
   kubernetes.core.k8s:
-    kubeconfig: /etc/kubernetes/admin.conf
-    state: present
+    state: absent
     definition:
-      apiVersion: gateway.networking.k8s.io/v1
-      kind: HTTPRoute
+      apiVersion: gateway.networking.k8s.io/v1alpha2
+      kind: TCPRoute
       metadata:
-        name: forgejo-route
+        name: forgejo-ssh-route
         namespace: forgejo
       spec:
         parentRefs:
           - name: forgejo-gateway
         hostnames:
-          - "forgejo.{{ dns_domain_name }}"
+          - "git.{{ dns_domain_name }}"
         rules:
           - backendRefs:
-              - name: forgejo
+              - name: forgejo-ssh
+                port: 22
+
+- name: forgejo httproute
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        name: forgejo-http-route
+        namespace: forgejo
+      spec:
+        parentRefs:
+          - name: forgejo-gateway
+        hostnames:
+          - "git.{{ dns_domain_name }}"
+        rules:
+          - backendRefs:
+              - name: forgejo-http
                 port: 3000

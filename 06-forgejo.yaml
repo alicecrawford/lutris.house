@@ -1,5 +1,4 @@
 ---
 - hosts: k8s_init_node
-  become: true
   roles:
     - forgejo_install
