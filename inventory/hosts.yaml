@@ -13,11 +13,13 @@ k8s_nodes:
     electra.raft.lutris.house:
     merope.raft.lutris.house:
     maia.raft.lutris.house:
+    sterope.raft.lutris.house:
+    pleione.raft.lutris.house:
 k8s_init_node:
   hosts:
-    alcyone.raft.lutris.house:
+    maia.raft.lutris.house:
 k8s_control_nodes:
   hosts:
-    alcyone.raft.lutris.house:
-    electra.raft.lutris.house:
-    merope.raft.lutris.house:
+    maia.raft.lutris.house:
+    sterope.raft.lutris.house:
+    pleione.raft.lutris.house:

@@ -18,6 +18,7 @@ k8s_api_name: "k8s-api.{{ dns_domain_name }}"
 k8s_api_loadbalancer_ip: 172.16.58.11
 k8s_svc_loadbalancer_ipv4: 172.16.60.1-172.16.60.200
 k8s_svc_loadbalancer_ipv6: 2001:5a8:4bd5:ef00::f00d:cbe:0/112
+k8s_all_worker_nodes: false
 
 #  Service settings
 letsencrypt_email: alice@tuxnami.org
