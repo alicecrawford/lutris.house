@@ -14,6 +14,15 @@
     database_password: "{{ lookup('community.general.random_string', special=false, length=32) }}"
   no_log: true
 
+- name: get secret presence
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/kubernetes/admin.conf
+    kind: Secret
+    namespace: forgejo
+    name: forgejo-pg-user
+  register: secret_presence
+  run_once: true
+
 - name: create secret for pg user
   kubernetes.core.k8s:
     kubeconfig: /etc/kubernetes/admin.conf
@@ -28,6 +37,7 @@
         name: forgejo-pg-user
         namespace: forgejo
       type: kubernetes.io/basic-auth
+  when: "not secret_presence['resources']"
 
 - name: create database
   kubernetes.core.k8s:
@@ -50,6 +60,7 @@
             owner: forgejo
             secret:
               name: forgejo-pg-user
+  when: "not secret_presence['resources']"
 
 - name: install forgejo
   kubernetes.core.helm:
@@ -81,7 +92,4 @@
             metallb.io/allow-shared-ip: forgejo
       persistence:
         size: "{{ forgejo_volume_size }}"
-
-- name: tmp
-  debug:
-    msg: "{{ groups['all'] }}"
+  when: "not secret_presence['resources']"
