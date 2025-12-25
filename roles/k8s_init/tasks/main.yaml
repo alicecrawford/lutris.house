@@ -1,14 +1,8 @@
 ---
-- name: get cluster info
-  kubernetes.core.k8s_cluster_info:
-    kubeconfig: /etc/kubernetes/admin.conf
-  register: api_status
-  ignore_errors: true
-
 - name: pull images
   ansible.builtin.shell:
     cmd: kubeadm config images pull
-  when: api_status['failed'] == true
+  when: inventory_hostname not in running_nodes
 
 - name: init cluster
   ansible.builtin.shell:
@@ -18,7 +12,7 @@
       "--pod-network-cidr={{ k8s_pod_cidr }}"
       "--service-cidr={{ k8s_svc_cidr }}"
       "--service-dns-domain={{ k8s_svc_dns }}"
-  when: api_status['failed'] == true and 'k8s_init_node' in group_names
+  when: inventory_hostname not in running_nodes and 'k8s_init_node' in group_names
 
 - name: get cluster key
   ansible.builtin.shell: >
@@ -47,12 +41,12 @@
     {{ hostvars[groups['k8s_init_node'][0]]['cluster_join'] }}
     --apiserver-bind-port 6442 --control-plane --certificate-key
     {{ hostvars[groups['k8s_init_node'][0]]['cluster_key'] }}
-  when: "'k8s_control_nodes' is in group_names and 'k8s_init_node' not in group_names and api_status['failed'] == true"
+  when: "'k8s_control_nodes' is in group_names and 'k8s_init_node' not in group_names and inventory_hostname not in running_nodes"
 
 - name: join worker nodes
   ansible.builtin.shell: >
     {{ hostvars[groups['k8s_init_node'][0]]['cluster_join'] }}
-  when: "'k8s_nodes' is in group_names and 'k8s_control_nodes' is not in group_names"
+  when: "'k8s_nodes' is in group_names and 'k8s_control_nodes' is not in group_names and inventory_hostname not in running_nodes"
 
 - name: Remove control plane node taint
   kubernetes.core.k8s_taint:
@@ -101,6 +95,7 @@
     mode: 0750
   become: false
   register: dir_info
+  when: "'k8s_control_nodes' is in group_names"
 
 - name: copy kubeconfig
   ansible.builtin.copy:

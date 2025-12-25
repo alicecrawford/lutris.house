@@ -1,5 +1,29 @@
 ---
+- hosts: k8s_init_node
+  become: true
+  tasks:
+    - name: get cluster status
+      kubernetes.core.k8s_info:
+        kubeconfig: /etc/kubernetes/admin.conf
+        kind: Node
+      ignore_errors: true
+      register: node_list
+
 - hosts: k8s_nodes
   become: true
+  vars:
+    running_nodes: []
+  pre_tasks:
+    - name: make that node list a fact
+      ansible.builtin.set_fact:
+        node_list: "{{ hostvars[groups['k8s_init_node'][0]]['node_list'] }}"
+    - name: add running nodes
+      ansible.builtin.set_fact:
+        running_nodes: "{{ running_nodes + [item['metadata']['name']] }}"
+      loop: "{{ node_list['resources'] }}"
+      when: node_list['failed'] == false
+    - name: boop
+      debug:
+        msg: "{{ running_nodes }}"
   roles:
     - k8s_init
