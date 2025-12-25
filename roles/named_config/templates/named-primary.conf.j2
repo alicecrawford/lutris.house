@@ -48,10 +48,10 @@ logging {
         };
 };
 
-zone "raft.lutris.house." {
+zone "{{ dns_domain_name }}." {
   type primary;
 
-  file "raft.lutris.house.zone";
+  file "{{ dns_domain_name }}.zone";
   
   notify yes;
 

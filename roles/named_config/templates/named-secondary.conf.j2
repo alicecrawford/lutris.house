@@ -46,10 +46,10 @@ logging {
         };
 };
 
-zone "raft.lutris.house." {
+zone "{{ dns_domain_name}}." {
   type secondary;
 
-  file "raft.lutris.house.save";
+  file "{{ dns_domain_name }}.save";
   
   primaries {
     {{ hostvars[groups['dns_primary'][0]]['ansible_default_ipv4']['address'] }};

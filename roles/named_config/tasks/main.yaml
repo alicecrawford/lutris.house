@@ -15,8 +15,8 @@
 
 - name: Copy zone file
   ansible.builtin.template:
-    src: raft.lutris.house.zone.j2
-    dest: /var/named/raft.lutris.house.zone
+    src: named.zone.j2
+    dest: "/var/named/{{ dns_domain_name }}.zone"
     owner: named
     group: named
     mode: 0644
