@@ -1,0 +1,20 @@
+---
+- name: install packages
+  ansible.builtin.dnf5:
+    name:
+      - virt-install
+      - libvirt-daemon-config-network
+      - libvirt-daemon-kvm
+      - qemu-kvm
+      - virt-manager
+      - virt-viewer
+      - guestfs-tools
+      - python3-libguestfs
+      - virt-top
+      - cockpit-machines
+    state: latest
+- name: enable libvirt
+  ansible.builtin.systemd_service:
+    name: libvirtd
+    enabled: true
+    state: started

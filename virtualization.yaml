@@ -1,0 +1,9 @@
+---
+- hosts: vm_hosts
+  become: true
+  roles:
+    - set_hostname
+    - disable_firewall
+    - update_system
+    - virtualization_install
+    - disable_selinux
