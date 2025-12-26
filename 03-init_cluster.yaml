@@ -22,8 +22,5 @@
         running_nodes: "{{ running_nodes + [item['metadata']['name']] }}"
       loop: "{{ node_list['resources'] }}"
       when: node_list['failed'] == false
-    - name: boop
-      debug:
-        msg: "{{ running_nodes }}"
   roles:
     - k8s_init
