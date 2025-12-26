@@ -1,25 +1,30 @@
 ---
 dns_servers:
   hosts:
-    alcyone.raft.lutris.house:
-    electra.raft.lutris.house:
-    merope.raft.lutris.house:
+    stoat.raft.lutris.house:
+    ferret.raft.lutris.house:
+    mink.raft.lutris.house:
 dns_primary:
   hosts:
-    alcyone.raft.lutris.house:
+    mink.raft.lutris.house:
 k8s_nodes:
   hosts:
-    alcyone.raft.lutris.house:
-    electra.raft.lutris.house:
-    merope.raft.lutris.house:
-    maia.raft.lutris.house:
-    sterope.raft.lutris.house:
-    pleione.raft.lutris.house:
+    spica.raft.lutris.house:
+    stoat.raft.lutris.house:
+    felis.raft.lutris.house:
+    ferret.raft.lutris.house:
+    mintaka.raft.lutris.house:
+    mink.raft.lutris.house:
 k8s_init_node:
   hosts:
-    maia.raft.lutris.house:
+    mintaka.raft.lutris.house:
 k8s_control_nodes:
   hosts:
-    maia.raft.lutris.house:
-    sterope.raft.lutris.house:
-    pleione.raft.lutris.house:
+    mintaka.raft.lutris.house:
+    spica.raft.lutris.house:
+    felis.raft.lutris.house:
+vm_hosts:
+  hosts:
+    stoat.raft.lutris.house:
+    ferret.raft.lutris.house:
+    mink.raft.lutris.house:
