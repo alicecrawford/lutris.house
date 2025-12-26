@@ -3,6 +3,7 @@
   vars:
     k_mode: "{{ 'MASTER' if 'dns_primary' in group_names else 'SECONDARY' }}"
     k_priority: "{{ '100' if 'dns_primary' in group_names else '90' }}"
+    k_interface: "{{ ansible_facts['default_ipv4']['interface'] }}"
   ansible.builtin.template:
     src: keepalive_dns.conf.j2
     dest: /etc/keepalived/conf.d/keepalive_dns.conf

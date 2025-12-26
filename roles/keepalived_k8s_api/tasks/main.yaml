@@ -3,7 +3,8 @@
   vars:
     k_mode: "{{ 'MASTER' if 'k8s_init_node' in group_names else 'SECONDARY' }}"
     k_priority: "{{ '100' if 'k8s_init_node' in group_names else '90' }}"
-    k_pass: "{{ lookup('community.general.random_string', length=12, special=false) }}"
+    k_pass: "{{ lookup('community.general.random_string', length=8, special=false) }}"
+    k_interface: "{{ ansible_facts['default_ipv4']['interface'] }}"
   ansible.builtin.template:
     src: keepalive_k8s_api.conf.j2
     dest: /etc/keepalived/conf.d/keepalive_k8s_api.conf
