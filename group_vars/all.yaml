@@ -28,6 +28,9 @@ k8s_api_loadbalancer_ip: 172.16.58.11
 k8s_svc_loadbalancer_ipv4: 172.16.60.1-172.16.60.200
 k8s_svc_loadbalancer_ipv6: 2001:5a8:4bd5:ef00::f00d:cbe:0/112
 
+#  Set to true if you want to use all nodes as worker nodes
+k8s_all_worker_nodes: false
+
 #  Pod and service CIDRs
 k8s_pod_cidr_ipv4: 10.160.0.0/12
 k8s_pod_cidr_ipv6: "fd00:cbe:0::/56"
