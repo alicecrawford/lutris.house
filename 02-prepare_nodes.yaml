@@ -9,7 +9,7 @@
   become: true
   roles:
     - disable_selinux
-- hosts: k8s_control_nodes
+- hosts: k8s_api_lb_nodes
   become: true
   roles:
     - keepalived_install

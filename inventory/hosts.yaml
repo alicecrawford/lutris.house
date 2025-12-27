@@ -9,20 +9,22 @@ dns_primary:
     mink.raft.lutris.house:
 k8s_nodes:
   hosts:
-    spica.raft.lutris.house:
     stoat.raft.lutris.house:
-    felis.raft.lutris.house:
     ferret.raft.lutris.house:
-    mintaka.raft.lutris.house:
     mink.raft.lutris.house:
 k8s_init_node:
   hosts:
-    mintaka.raft.lutris.house:
+    mink.raft.lutris.house:
 k8s_control_nodes:
   hosts:
-    mintaka.raft.lutris.house:
-    spica.raft.lutris.house:
-    felis.raft.lutris.house:
+    stoat.raft.lutris.house:
+    ferret.raft.lutris.house:
+    mink.raft.lutris.house:
+k8s_api_lb_nodes:
+  hosts:
+    stoat.raft.lutris.house:
+    ferret.raft.lutris.house:
+    mink.raft.lutris.house:
 vm_hosts:
   hosts:
     stoat.raft.lutris.house:
