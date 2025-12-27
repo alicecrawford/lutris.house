@@ -8,17 +8,24 @@
       metadata:
         name: forgejo
 
-- name: generate password and assign to variable
-  ansible.builtin.set_fact:
-    database_password: "{{ lookup('community.general.random_string', special=false, length=32) }}"
-  no_log: true
-
 - name: get secret presence
   kubernetes.core.k8s_info:
     kind: Secret
     namespace: forgejo
     name: forgejo-pg-user
   register: secret_presence
+
+- name: generate password and assign to variable
+  ansible.builtin.set_fact:
+    database_password: "{{ lookup('community.general.random_string', special=false, length=32) }}"
+  no_log: true
+  when: "not secret_presence['resources']"
+
+- name: extract the secret if it's there
+  ansible.builtin.set_fact:
+    database_password: "{{ secret_presence['resources'][0]['data']['passwd'] | ansible.builtin.b64decode }}"
+  no_log: true
+  when: "secret_presence['resources']"
 
 - name: create secret for pg user
   kubernetes.core.k8s:
@@ -55,7 +62,6 @@
             owner: forgejo
             secret:
               name: forgejo-pg-user
-  when: "not secret_presence['resources']"
 
 - name: install forgejo
   kubernetes.core.helm:
@@ -80,7 +86,6 @@
             NAME: forgejo
       persistence:
         size: "{{ forgejo_volume_size }}"
-  when: "not secret_presence['resources']"
 
 - name: forgejo certificate
   kubernetes.core.k8s:
@@ -94,7 +99,7 @@
       spec:
         dnsNames:
           - "git.{{ dns_domain_name }}"
-        secretName: git-certificate
+        secretName: forgejo-certificate
         issuerRef:
           name: letsencrypt-dns01-issuer
           kind: ClusterIssuer
@@ -122,10 +127,16 @@
                 - kind: Secret
                   group: ""
                   name: forgejo-certificate
+          - name: ssh
+            port: 22
+            protocol: TCP
+            allowedRoutes:
+              namespaces:
+                from: Same
 
 - name: forgejo tcproute
   kubernetes.core.k8s:
-    state: absent
+    state: present
     definition:
       apiVersion: gateway.networking.k8s.io/v1alpha2
       kind: TCPRoute
