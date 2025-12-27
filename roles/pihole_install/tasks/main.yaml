@@ -17,11 +17,14 @@
       persistentVolumeClaim:
         enabled: true
         storageClass: "longhorn"
+      dualStack:
+        enabled: true
       admin:
         existingSecret: "pihole-admin"
       serviceDns:
         mixedService: true
-        loadBalancerIP: "{{ pihole_loadbalancer_ip }}"
+        loadBalancerIP: "{{ pihole_loadbalancer_ipv4 }}"
+        loadBalancerIPv6: "{{ pihole_loadbalancer_ipv6 }}"
         type: LoadBalancer
       serviceDhcp:
         enabled: false
