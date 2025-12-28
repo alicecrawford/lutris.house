@@ -23,9 +23,9 @@
 
 - name: extract the secret if it's there
   ansible.builtin.set_fact:
-    database_password: "{{ secret_presence['resources'][0]['data']['passwd'] | ansible.builtin.b64decode }}"
+    database_password: "{{ secret_presence['resources'][0]['data']['password'] | ansible.builtin.b64decode }}"
   no_log: true
-  when: "secret_presence['resources']"
+  when: "secret_presence['resources'] | length > 0"
 
 - name: create secret for pg user
   kubernetes.core.k8s:
@@ -77,7 +77,17 @@
         capabilities:
           add: ["SYS_CHROOT"]
       gitea:
+        metrics:
+          enabled: true
+        serviceMonitor:
+          enabled: true
+          namespace: monitoring
         config:
+          server:
+            ROOT_URL: "https://git.{{ dns_domain_name }}/"
+            DOMAIN: "git.{{ dns_domain_name }}"
+            SSH_DOMAIN: "git.{{ dns_domain_name }}"
+            ENABLE_PPROF: true
           database:
             DB_TYPE: postgres
             HOST: "forgejodb-rw:5432"
@@ -146,6 +156,7 @@
       spec:
         parentRefs:
           - name: forgejo-gateway
+            sectionName: ssh
         hostnames:
           - "git.{{ dns_domain_name }}"
         rules:
@@ -165,6 +176,7 @@
       spec:
         parentRefs:
           - name: forgejo-gateway
+            sectionName: http
         hostnames:
           - "git.{{ dns_domain_name }}"
         rules:

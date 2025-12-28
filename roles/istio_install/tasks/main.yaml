@@ -14,7 +14,6 @@
     definition: "{{ lookup('file', 'gateway-api-standard-install.yaml') | from_yaml_all }}"
     server_side_apply:
       field_manager: ansible
-  when: "'gateway.networking.k8s.io/v1' not in api_status['apis']"
 
 - name: install exp gateway api
   kubernetes.core.k8s:
@@ -22,7 +21,6 @@
     definition: "{{ lookup('file', 'gateway-api-experimental-install.yaml') | from_yaml_all }}"
     server_side_apply:
       field_manager: ansible
-  when: "'gateway.networking.k8s.io/v1' not in api_status['apis']"
 
 - name: install istio base
   kubernetes.core.helm:
@@ -30,50 +28,65 @@
     chart_ref: istio/base
     namespace: istio-system
     create_namespace: true
-  when: "'networking.istio.io/v1' not in api_status['apis']"
-
-- name: get deployment info
-  kubernetes.core.k8s_info:
-    kind: Deployment
-    namespace: istio-system
-    name: istiod
-  register: dep_status
+    values:
+      profile: ambient
+      pilot:
+        env:
+          PILOT_ENABLE_ALPHA_GATEWAY_API: true
+          ISTIO_DUAL_STACK: "true"
+        ipFamilyPolicy: RequireDualStack
+      meshConfig:
+        defaultConfig:
+          proxyMetadata:
+            ISTIO_DUAL_STACK: "true"
 
 - name: install istio istiod
   kubernetes.core.helm:
     name: istiod
     chart_ref: istio/istiod
     namespace: istio-system
-    set_values:
-      - value: "profile=ambient"
-  when: "not dep_status['resources']"
-
-- name: get deployment info
-  kubernetes.core.k8s_info:
-    kind: DaemonSet
-    namespace: istio-system
-    name: istio-cni
-  register: ds_status
+    values:
+      profile: ambient
+      pilot:
+        env:
+          PILOT_ENABLE_ALPHA_GATEWAY_API: true
+          ISTIO_DUAL_STACK: "true"
+        ipFamilyPolicy: RequireDualStack
+      meshConfig:
+        defaultConfig:
+          proxyMetadata:
+            ISTIO_DUAL_STACK: "true"
 
 - name: install istio cni
   kubernetes.core.helm:
     name: istio-cni
     chart_ref: istio/cni
     namespace: istio-system
-    set_values:
-      - value: "profile=ambient"
-  when: "not ds_status['resources']"
-
-- name: get deployment info
-  kubernetes.core.k8s_info:
-    kind: DaemonSet
-    namespace: istio-system
-    name: ztunnel
-  register: ds_status
+    values:
+      profile: ambient
+      pilot:
+        env:
+          PILOT_ENABLE_ALPHA_GATEWAY_API: true
+          ISTIO_DUAL_STACK: "true"
+        ipFamilyPolicy: RequireDualStack
+      meshConfig:
+        defaultConfig:
+          proxyMetadata:
+            ISTIO_DUAL_STACK: "true"
 
 - name: install istio ztunnel
   kubernetes.core.helm:
     name: ztunnel
     chart_ref: istio/ztunnel
     namespace: istio-system
-  when: "not ds_status['resources']"
+    values:
+      profile: ambient
+      pilot:
+        env:
+          PILOT_ENABLE_ALPHA_GATEWAY_API: true
+          ISTIO_DUAL_STACK: "true"
+        ipFamilyPolicy: RequireDualStack
+      meshConfig:
+        defaultConfig:
+          proxyMetadata:
+            ISTIO_DUAL_STACK: "true"
