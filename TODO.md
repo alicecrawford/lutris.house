@@ -3,7 +3,7 @@
 ### implementations
 
 - ~[p0] add cnpg configs~
-- [p0] forgejo
+- ~[p0] forgejo~
 - [p1] mariadb operator
 - [p2] immich
 - [p3] romm
