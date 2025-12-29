@@ -12,8 +12,23 @@
     create_namespace: true
     update_repo_cache: true
     values:
+      prometheus-node-exporter:
+        service:
+          ipDualStack:
+            enabled: true
+
+      prometheusOperator:
+        service:
+          ipDualStack:
+            enabled: true
+
       prometheus:
+        service:
+          ipDualStack:
+            enabled: true
         prometheusSpec:
+          serviceMonitorNamespaceSelector: {}
+          podMonitorNamespaceSelector: {}
           storageSpec:
             volumeClaimTemplate:
               spec:
@@ -31,6 +46,9 @@
           size: "{{ monitoring_grafana_volume_size }}"
 
       alertmanager:
+        service:
+          ipDualStack:
+            enabled: true
         alertmanagerSpec:
           storage:
             volumeClaimTemplate:
