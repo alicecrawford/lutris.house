@@ -12,6 +12,9 @@ k8s_nodes:
     stoat.raft.lutris.house:
     ferret.raft.lutris.house:
     mink.raft.lutris.house:
+nas_nodes:
+  hosts:
+    narwhal.raft.lutris.house:
 k8s_init_node:
   hosts:
     mink.raft.lutris.house:
