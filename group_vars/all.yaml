@@ -39,6 +39,11 @@ k8s_svc_cidr_ipv6: "fd00:cbe:1::/112"
 k8s_pod_cidr: "{{ k8s_pod_cidr_ipv4 }},{{ k8s_pod_cidr_ipv6 }}"
 k8s_svc_cidr: "{{ k8s_svc_cidr_ipv4 }},{{ k8s_svc_cidr_ipv6 }}"
 
+# NFS Server options
+nfs_server_hostname: "narwhal.{{ dns_domain_name }}"
+nfs_shares:
+  disk: /srv/nfs/kubernetes
+  ssd: /srv/nfs/kubernetes.ssd
 
 #  Service settings
 #
