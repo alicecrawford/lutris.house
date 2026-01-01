@@ -1,0 +1,186 @@
+---
+- name: create namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: immich
+
+- name: get secret presence
+  kubernetes.core.k8s_info:
+    kind: Secret
+    namespace: immich
+    name: immich-pg-user
+  register: secret_presence
+
+- name: generate password
+  ansible.builtin.set_fact:
+    database_password: "{{ lookup('community.general.random_string', special=false, length=32) }}"
+  no_log: true
+  when: "not secret_presence['resources']"
+
+- name: extract the secret if it's there
+  ansible.builtin.set_fact:
+    database_password: "{{ secret_presence['resources'][0]['data']['password'] | ansible.builtin.b64decode }}"
+  no_log: true
+  when: "secret_presence['resources'] | length > 0"
+
+- name: create secret for pg user
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      stringData:
+        username: immich
+        password: "{{ database_password }}"
+      metadata:
+        name: immich-pg-user
+        namespace: immich
+      type: kubernetes.io/basic-auth
+  when: "not secret_presence['resources']"
+
+- name: create database
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      metadata:
+        name: immichdb
+        namespace: immich
+      spec:
+        instances: 3
+        storage:
+          size: 1Gi
+          storageClass: longhorn
+        imageName: ghcr.io/tensorchord/cloudnative-vectorchord:16.9-0.4.3
+
+        postgresql:
+          shared_preload_libraries:
+            - "vchord.so"
+
+        bootstrap:
+          initdb:
+            database: immich
+            owner: immich
+            secret:
+              name: immich-pg-user
+            postInitApplicationSQL:
+              - CREATE EXTENSION vchord CASCADE;
+              - CREATE EXTENSION earthdistance CASCADE;
+
+- name: immich nfs pvc
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: immich-nfs-library-pvc
+        namespace: immich
+      spec:
+        accessModes:
+          - ReadWriteMany
+        storageClassName: nfs-disk-csi
+        resources:
+          requests:
+            storage: 2Ti
+
+- name: install immich
+  kubernetes.core.helm:
+    name: immich
+    chart_ref: oci://ghcr.io/immich-app/immich-charts/immich
+    namespace: immich
+    values:
+      server:
+        controllers:
+          main:
+            containers:
+              main:
+                image:
+                  tag: v2.4.1
+                env:
+                  DB_HOSTNAME: immichdb-rw
+                  DB_DATABASE_NAME: immich
+                  DB_USERNAME:
+                    valueFrom:
+                      secretKeyRef:
+                        name: immich-pg-user
+                        key: username
+                  DB_PASSWORD:
+                    valueFrom:
+                      secretKeyRef:
+                        name: immich-pg-user
+                        key: password
+
+      valkey:
+        enabled: true
+
+      immich:
+        persistence:
+          library:
+            existingClaim: immich-nfs-library-pvc
+
+- name: immich certificate
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: immich-certificate
+        namespace: immich
+      spec:
+        dnsNames:
+          - "immich.{{ dns_domain_name }}"
+        secretName: immich-certificate
+        issuerRef:
+          name: letsencrypt-dns01-issuer
+          kind: ClusterIssuer
+
+- name: immich gateway
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: Gateway
+      metadata:
+        name: immich-gateway
+        namespace: immich
+      spec:
+        gatewayClassName: istio
+        listeners:
+          - name: http
+            port: 443
+            protocol: HTTPS
+            allowedRoutes:
+              namespaces:
+                from: Same
+            tls:
+              certificateRefs:
+                - kind: Secret
+                  group: ""
+                  name: immich-certificate
+
+- name: immich httproute
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        name: immich-http-route
+        namespace: immich
+      spec:
+        parentRefs:
+          - name: immich-gateway
+            sectionName: http
+        hostnames:
+          - "immich.{{ dns_domain_name }}"
+        rules:
+          - backendRefs:
+              - name: immich-server
+                port: 2283

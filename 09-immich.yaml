@@ -1,0 +1,4 @@
+---
+- hosts: k8s_init_node
+  roles:
+    - immich_setup
