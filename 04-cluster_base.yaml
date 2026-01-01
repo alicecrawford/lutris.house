@@ -21,7 +21,9 @@
     - metrics-server_install
     - istio_install
     - longhorn_install
+    - nfs_csi_setup
     - metallb_install
     - cert-manager_install
     - external-dns_install
     - cnpg_install
+    - mariadb_op_setup
