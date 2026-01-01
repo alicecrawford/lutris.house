@@ -23,6 +23,7 @@ k8s_modules:
   - ip6table_mangle
   - ip6table_raw
   - iscsi_tcp
+  - dm_crypt
 
 #  Sysctls for Kubernetes
 k8s_sysctl:
