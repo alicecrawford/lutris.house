@@ -1,0 +1,34 @@
+---
+- name: create namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: mariadb-system
+
+- name: Add mariadb repository
+  kubernetes.core.helm_repository:
+    name: mariadb-operator
+    repo_url: https://helm.mariadb.com/mariadb-operator
+
+- name: install crds
+  kubernetes.core.helm:
+    name: mariadb-operator-crds
+    chart_ref: mariadb-operator/mariadb-operator-crds
+    namespace: mariadb-system
+
+- name: install mariadb-operator
+  kubernetes.core.helm:
+    name: mariadb-operator
+    chart_ref: mariadb-operator/mariadb-operator
+    namespace: mariadb-system
+    values:
+      metrics:
+        enabled: true
+      webhook:
+        cert:
+          certManager:
+            enabled: true
+      clusterName: "{{ k8s_svc_dns }}"
