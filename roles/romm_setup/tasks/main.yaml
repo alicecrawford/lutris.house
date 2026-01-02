@@ -1,0 +1,254 @@
+---
+- name: create namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: romm
+
+- name: get secret presence
+  kubernetes.core.k8s_info:
+    kind: Secret
+    namespace: romm
+    name: romm-secret
+  register: secret_presence
+
+- name: generate password
+  ansible.builtin.set_fact:
+    database_password: "{{ lookup('community.general.random_string', special=false, length=32) }}"
+    db_root_password: "{{ lookup('community.general.random_string', special=false, length=32) }}"
+    romm_auth_secret: "{{ lookup('community.general.random_string', length=32, upper=false, lower=false, override_special='0123456789abcdef', numbers=false) }}"
+  no_log: true
+  when: "not secret_presence['resources']"
+
+- name: extract the secret if it's there
+  ansible.builtin.set_fact:
+    database_password: "{{ secret_presence['resources'][0]['data']['db_password'] | ansible.builtin.b64decode }}"
+    db_root_password: "{{ secret_presence['resources'][0]['data']['root_password'] | ansible.builtin.b64decode }}"
+  no_log: true
+  when: "secret_presence['resources'] | length > 0"
+
+- name: create secrets
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      stringData:
+        db_password: "{{ database_password }}"
+        root_password: "{{ db_root_password }}"
+        romm_auth_secret: "{{ romm_auth_secret }}"
+        igdb_client_id: "{{ romm_igdb_client_id }}"
+        igdb_client_secret: "{{ romm_igdb_client_secret }}"
+        screenscraper_user: "{{ romm_screenscraper_user }}"
+        screenscraper_password: "{{ romm_screenscraper_password }}"
+      metadata:
+        name: romm-secret
+        namespace: romm
+      type: Opaque
+  when: "not secret_presence['resources']"
+
+- name: romm nfs pvc
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: romm-data-pvc
+        namespace: romm
+      spec:
+        accessModes:
+          - ReadWriteMany
+        storageClassName: nfs-disk-csi
+        resources:
+          requests:
+            storage: 20Ti
+
+- name: romm database
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: k8s.mariadb.com/v1alpha1
+      kind: MariaDB
+      metadata:
+        name: rommdb
+        namespace: romm
+      spec:
+        storage:
+          size: 2Gi
+          storageClassName: longhorn
+        rootPasswordSecretKeyRef:
+          name: romm-secret
+          key: root_password
+        passwordSecretKeyRef:
+          name: romm-secret
+          key: db_password
+        username: romm
+        database: romm
+        replicas: 3
+        replication:
+          enabled: true
+
+- name: romm deployment
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: romm-server
+        namespace: romm
+      spec:
+        replicas: 1
+        selector:
+          matchLabels:
+            name: romm
+        template:
+          metadata:
+            labels:
+              name: romm
+          spec:
+            containers:
+              - name: romm-server-ctr
+                ports:
+                  - containerPort: 8080
+                    name: http
+                    protocol: TCP
+                image: rommapp/romm:latest
+                resources:
+                  requests:
+                    ephemeral-storage: 2Gi
+                volumeMounts:
+                  - name: romm-data
+                    mountPath: /romm
+                  - name: romm-redis
+                    mountPath: /redis-data
+                env:
+                  - name: ROMM_AUTH_SECRET_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: romm-secret
+                        key: romm_auth_secret
+                  - name: ROMM_BASE_URL
+                    value: "https://romm.{{ dns_domain_name }}/"
+                  - name: DB_HOST
+                    value: rommdb-primary
+                  - name: DB_NAME
+                    value: romm
+                  - name: DB_USER
+                    value: romm
+                  - name: DB_PASSWD
+                    valueFrom:
+                      secretKeyRef:
+                        name: romm-secret
+                        key: db_password
+                  - name: IGDB_CLIENT_ID
+                    valueFrom:
+                      secretKeyRef:
+                        name: romm-secret
+                        key: igdb_client_id
+                  - name: IGDB_CLIENT_SECRET
+                    valueFrom:
+                      secretKeyRef:
+                        name: romm-secret
+                        key: igdb_client_secret
+                  - name: SCREENSCRAPER_USER
+                    valueFrom:
+                      secretKeyRef:
+                        name: romm-secret
+                        key: screenscraper_user
+                  - name: SCREENSCRAPER_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        name: romm-secret
+                        key: screenscraper_password
+                  - name: HASHEOUS_API_ENABLED
+                    value: "true"
+            volumes:
+              - name: romm-redis
+                emptyDir: {}
+              - name: romm-data
+                PersistentVolumeClaim:
+                  claimName: romm-data-pvc
+
+- name: romm service
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: romm-www
+        namespace: romm
+      spec:
+        type: ClusterIP
+        ports:
+          - port: 8080
+            protocol: TCP
+            targetPort: 8080
+        selector:
+          name: romm
+
+- name: romm certificate
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: romm-certificate
+        namespace: romm
+      spec:
+        dnsNames:
+          - "romm.{{ dns_domain_name }}"
+        secretName: romm-certificate
+        issuerRef:
+          name: letsencrypt-dns01-issuer
+          kind: ClusterIssuer
+
+- name: romm gateway
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: Gateway
+      metadata:
+        name: romm-gateway
+        namespace: romm
+      spec:
+        gatewayClassName: istio
+        listeners:
+          - name: http
+            port: 443
+            protocol: HTTPS
+            allowedRoutes:
+              namespaces:
+                from: Same
+            tls:
+              certificateRefs:
+                - kind: Secret
+                  group: ""
+                  name: romm-certificate
+
+- name: romm httproute
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        name: romm-http-route
+        namespace: romm
+      spec:
+        parentRefs:
+          - name: romm-gateway
+            sectionName: http
+        hostnames:
+          - "romm.{{ dns_domain_name }}"
+        rules:
+          - backendRefs:
+              - name: romm-www
+                port: 8080

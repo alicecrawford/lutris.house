@@ -1,0 +1,17 @@
+---
+- hosts: k8s_init_node
+  vars_prompt:
+    - name: romm_igdb_client_id
+      prompt: Enter IGDB client id
+      private: false
+    - name: romm_igdb_client_secret
+      prompt: Enter IGDB client secret
+      private: false
+    - name: romm_screenscraper_user
+      prompt: Enter screenscraper username
+      private: false
+    - name: romm_screenscraper_password
+      prompt: Enter screenscraper password
+      private: true
+  roles:
+    - romm_setup
