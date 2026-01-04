@@ -4,24 +4,55 @@
     name: cilium
     repo_url: https://helm.cilium.io/
 
-- name: get cluster info
-  kubernetes.core.k8s_cluster_info:
-  register: api_status
+- name: get crd info
+  kubernetes.core.k8s_info:
+    api_version: apiextensions.k8s.io/v1
+    kind: CustomResourceDefinition
+    name: servicemonitors.monitoring.coreos.com
+  register: crd_info
+  ignore_errors: true
+
+- name: enable servicemonitors if crd exists
+  ansible.builtin.set_fact:
+    use_service_monitor: true
+  when: "crd_info['resources'] | length > 0"
 
 - name: install cilium
   kubernetes.core.helm:
     name: cilium
     chart_ref: cilium/cilium
     namespace: kube-system
-    set_values:
-      - value: "cni.exclusive=false"
-      - value: "ipv4.enabled=true"
-      - value: "ipv6.enabled=true"
-      - value: "ipam.mode=cluster-pool"
-      - value: "ipam.operator.clusterPoolIPv4PodCIDRList={{ k8s_pod_cidr_ipv4 }}"
-      - value: "ipam.operator.clusterPoolIPv4MaskSize=24"
-      - value: "ipam.operator.clusterPoolIPv6PodCIDRList={{ k8s_pod_cidr_ipv6 }}"
-      - value: "ipam.operator.clusterPoolIPv6MaskSize=64"
-      - value: "encryption.enabled=true"
-      - value: "encryption.type=wireguard"
-  when: "'cilium.io/v2' not in api_status['apis']"
+    values:
+      cni:
+        exclusive: false
+      ipv4:
+        enabled: true
+      ipv6:
+        enabled: true
+      ipam:
+        mode: cluster-pool
+        clusterPoolIPv4PodCIDRList:
+          - "{{ k8s_pod_cidr_ipv4 }}"
+        clusterPoolIPv4MaskSize: 24
+        clusterPoolIPv6PodCIDRList:
+          - "{{ k8s_pod_cidr_ipv6 }}"
+        clusterPoolIPv6MaskSize: 64
+      encryption:
+        enabled: true
+        type: wireguard
+      dashboards:
+        enabled: "{{ use_service_monitor | default(false) }}"
+      prometheus:
+        enabled: true
+        serviceMonitor:
+          enabled: "{{ use_service_monitor | default(false) }}"
+      envoy:
+        prometheus:
+          enabled: true
+          serviceMonitor:
+            enabled: "{{ use_service_monitor | default(false) }}"
+      operator:
+        prometheus:
+          enabled: true
+          serviceMonitor:
+            enabled: "{{ use_service_monitor | default(false) }}"
