@@ -17,11 +17,30 @@
           pod-security.kubernetes.io/audit: privileged
           pod-security.kubernetes.io/warn: privileged
 
+- name: get crd info
+  kubernetes.core.k8s_info:
+    api_version: apiextensions.k8s.io/v1
+    kind: CustomResourceDefinition
+    name: servicemonitors.monitoring.coreos.com
+  register: crd_info
+  ignore_errors: true
+
+- name: enable servicemonitors if crd exists
+  ansible.builtin.set_fact:
+    use_service_monitor: true
+  when: "crd_info['resources'] | length > 0"
+
 - name: install metallb
   kubernetes.core.helm:
     name: metallb
     chart_ref: metallb/metallb
     namespace: metallb-system
+    values:
+      prometheus:
+        serviceMonitor:
+          enabled: "{{ use_service_monitor | default(false) }}"
+        serviceAccount: prometheus-stack-kube-prom-prometheus
+        namespace: monitoring
 
 - name: Wait for metallb to be ready
   kubernetes.core.k8s_info:
