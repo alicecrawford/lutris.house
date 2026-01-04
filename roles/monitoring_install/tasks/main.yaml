@@ -115,7 +115,6 @@
   kubernetes.core.k8s:
     state: present
     definition:
-
       apiVersion: gateway.networking.k8s.io/v1
       kind: HTTPRoute
       metadata:
@@ -154,7 +153,6 @@
   kubernetes.core.k8s:
     state: present
     definition:
-
       apiVersion: gateway.networking.k8s.io/v1
       kind: HTTPRoute
       metadata:
