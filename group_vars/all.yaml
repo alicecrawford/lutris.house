@@ -55,6 +55,8 @@ acme_server: https://acme-v02.api.letsencrypt.org/directory
 
 #  Monitoring storage sizes
 monitoring_prometheus_volume_size: 100Gi
+monitoring_prometheus_retention: 365d
+monitoring_prometheus_retention_size: 95GiB
 monitoring_alertmanager_volume_size: 5Gi
 monitoring_grafana_volume_size: 5Gi
 

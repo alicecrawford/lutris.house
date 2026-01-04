@@ -13,6 +13,9 @@
     update_repo_cache: true
     values:
       prometheus-node-exporter:
+        prometheus:
+          podMonitor:
+            enabled: true
         service:
           ipDualStack:
             enabled: true
@@ -27,8 +30,14 @@
           ipDualStack:
             enabled: true
         prometheusSpec:
+          ruleSelectorNilUsesHelmValues: false
+          serviceMonitorSelectorNilUsesHelmValues: false
+          podMonitorSelectorNilUsesHelmValues: false
+          probeSelectorNilUsesHelmValues: false
           serviceMonitorNamespaceSelector: {}
           podMonitorNamespaceSelector: {}
+          retention: "{{ monitoring_prometheus_retention }}"
+          retentionSize: "{{ monitoring_prometheus_retention_size }}"
           storageSpec:
             volumeClaimTemplate:
               spec:
