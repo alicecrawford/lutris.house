@@ -8,6 +8,19 @@
       metadata:
         name: immich
 
+- name: get crd info
+  kubernetes.core.k8s_info:
+    api_version: apiextensions.k8s.io/v1
+    kind: CustomResourceDefinition
+    name: servicemonitors.monitoring.coreos.com
+  register: crd_info
+  ignore_errors: true
+
+- name: enable servicemonitors if crd exists
+  ansible.builtin.set_fact:
+    use_service_monitor: true
+  when: "crd_info['resources'] | length > 0"
+
 - name: get secret presence
   kubernetes.core.k8s_info:
     kind: Secret
@@ -72,6 +85,23 @@
               - CREATE EXTENSION vchord CASCADE;
               - CREATE EXTENSION earthdistance CASCADE;
 
+- name: db podmonitor
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: monitoring.coreos.com/v1
+      kind: PodMonitor
+      metadata:
+        name: cluster-monitor-immich
+        namespace: immich
+      spec:
+        selector:
+          matchLabels:
+            cnpg.io/cluster: immichdb
+        podMetricsEndpoints:
+          - port: metrics
+  when: "crd_info['resources'] | length > 0"
+
 - name: immich nfs pvc
   kubernetes.core.k8s:
     state: present
@@ -120,6 +150,8 @@
         enabled: true
 
       immich:
+        metrics:
+          enabled: "{{ use_service_monitor | default(false) }}"
         persistence:
           library:
             existingClaim: immich-nfs-library-pvc
