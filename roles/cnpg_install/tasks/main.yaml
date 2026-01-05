@@ -5,3 +5,18 @@
     definition: "{{ lookup('file', 'cnpg-1.28.0.yaml') | from_yaml_all }}"
     server_side_apply:
       field_manager: ansible
+
+- name: grafana dashboard
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        labels:
+          grafana_dashboard: "1"
+        name: cnpg-dashboard-cm
+        namespace: cnpg-system
+      data:
+        cnpg-dashbord.json: "{{ lookup('file', 'cnpg-dashboard.json') }}"
+  when: "crd_info['resources'] | length > 0"

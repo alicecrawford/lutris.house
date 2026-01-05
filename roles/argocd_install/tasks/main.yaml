@@ -109,3 +109,18 @@
     - argocd-dex-server
     - argocd-applicationset-controller
   when: "crd_info['resources'] | length > 0"
+
+- name: grafana dashboard
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        labels:
+          grafana_dashboard: "1"
+        name: argocd-dashboard-cm
+        namespace: argocd
+      data:
+        argocd-dashboard.json: "{{ lookup('file', 'argocd-dashboard.json') }}"
+  when: "crd_info['resources'] | length > 0"

@@ -175,3 +175,20 @@
           - port: http-monitoring
             interval: 15s
   when: "crd_info['resources'] | length > 0"
+
+- name: grafana dashboard
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        labels:
+          grafana_dashboard: "1"
+        name: istio-dashboard-cm
+        namespace: istio-system
+      data:
+        istio-control-plane-dashbord.json: "{{ lookup('file', 'istio-control-plane-dashboard.json') }}"
+        istio-performance-dashbord.json: "{{ lookup('file', 'istio-performance-dashboard.json') }}"
+        istio-ztunnel-dashbord.json: "{{ lookup('file', 'istio-ztunnel-dashboard.json') }}"
+  when: "crd_info['resources'] | length > 0"
