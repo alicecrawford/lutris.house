@@ -91,6 +91,8 @@
         replicas: 3
         replication:
           enabled: true
+        metrics:
+          enabled: true
 
 - name: romm deployment
   kubernetes.core.k8s:
