@@ -42,6 +42,21 @@
         serviceAccount: prometheus-stack-kube-prom-prometheus
         namespace: monitoring
 
+- name: grafana dashboard
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        labels:
+          grafana_dashboard: "1"
+        name: metallb-dashboard-cm
+        namespace: metallb-system
+      data:
+        metallb-dashbord.json: "{{ lookup('file', 'metallb-dashboard.json') }}"
+  when: "crd_info['resources'] | length > 0"
+
 - name: Wait for metallb to be ready
   kubernetes.core.k8s_info:
     kind: Pod

@@ -53,6 +53,19 @@
           storageClassName: longhorn
           accessModes: ["ReadWriteOnce"]
           size: "{{ monitoring_grafana_volume_size }}"
+        dashboardProviders:
+          dashboardproviders.yaml:
+            apiVersion: 1
+            providers:
+              - name: default
+                orgId: 1
+                folder: ''
+                type: file
+                disableDeletion: false
+                # Set editable to true
+                editable: true
+                options:
+                  path: /var/lib/grafana/dashboards/default
 
       alertmanager:
         service:

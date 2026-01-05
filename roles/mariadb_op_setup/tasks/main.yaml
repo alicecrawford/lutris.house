@@ -32,3 +32,18 @@
           certManager:
             enabled: true
       clusterName: "{{ k8s_svc_dns }}"
+
+- name: grafana dashboard
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        labels:
+          grafana_dashboard: "1"
+        name: mariadb-dashboard-cm
+        namespace: mariadb-system
+      data:
+        mariadb-dashbord.json: "{{ lookup('file', 'mysql-dashboard.json') }}"
+  when: "crd_info['resources'] | length > 0"
